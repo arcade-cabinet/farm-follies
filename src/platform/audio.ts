@@ -8,7 +8,7 @@ import { Capacitor } from "@capacitor/core";
 import type { SoundType } from "@/game/audio";
 
 // Audio file paths
-const AUDIO_BASE = "/assets/audio";
+const AUDIO_BASE = `${import.meta.env.BASE_URL}assets/audio`;
 
 const SFX_FILES: Record<SoundType, string> = {
   drop: `${AUDIO_BASE}/sfx/drop.ogg`,

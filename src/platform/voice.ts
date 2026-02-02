@@ -4,7 +4,7 @@
  * Voice lines are supplementary -- the game works if they fail to load.
  */
 
-const AUDIO_BASE = "/assets/audio/voice";
+const AUDIO_BASE = `${import.meta.env.BASE_URL}assets/audio/voice`;
 
 /** Game events that have voice lines */
 export type VoiceEvent =

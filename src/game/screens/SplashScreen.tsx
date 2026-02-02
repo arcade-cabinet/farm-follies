@@ -8,8 +8,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useOrientation } from "@/game/hooks/useOrientation";
 
-const PORTRAIT_VIDEO = "/assets/video/splash_portrait.mp4";
-const LANDSCAPE_VIDEO = "/assets/video/splash_landscape.mp4";
+const PORTRAIT_VIDEO = `${import.meta.env.BASE_URL}assets/video/splash_portrait.mp4`;
+const LANDSCAPE_VIDEO = `${import.meta.env.BASE_URL}assets/video/splash_landscape.mp4`;
 const FADE_DURATION_MS = 600;
 
 interface SplashScreenProps {

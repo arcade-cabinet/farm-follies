@@ -7,9 +7,9 @@
 import { useOrientation } from "@/game/hooks/useOrientation";
 
 const BACKGROUNDS = {
-  portrait: "/assets/images/menu_portrait.png",
-  landscape: "/assets/images/menu_landscape.png",
-} as const;
+  portrait: `${import.meta.env.BASE_URL}assets/images/menu_portrait.png`,
+  landscape: `${import.meta.env.BASE_URL}assets/images/menu_landscape.png`,
+};
 
 interface MenuBackgroundProps {
   /** Overlay opacity from 0 to 1 (default 0.55) */
