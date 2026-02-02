@@ -46,24 +46,14 @@ async function startGame(page: Page) {
 
 /** Wait until window.__game is available (dev mode exposes it). */
 async function waitForGameInstance(page: Page): Promise<boolean> {
-  return page.evaluate(() => {
-    return new Promise<boolean>((resolve) => {
-      if ((window as any).__game?.getTestSnapshot) {
-        resolve(true);
-        return;
-      }
-      const interval = setInterval(() => {
-        if ((window as any).__game?.getTestSnapshot) {
-          clearInterval(interval);
-          resolve(true);
-        }
-      }, 100);
-      setTimeout(() => {
-        clearInterval(interval);
-        resolve(false);
-      }, 5000);
+  try {
+    await page.waitForFunction(() => !!(window as any).__game?.getTestSnapshot, {
+      timeout: 5000,
     });
-  });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -102,6 +92,7 @@ async function injectGovernor(page: Page) {
       private findBestTarget(snap: any): { x: number } | null {
         if (!snap.player || snap.fallingAnimals.length === 0) return null;
         const floorY = snap.player.y + snap.player.height;
+        if (floorY <= 0) return null;
         let bestAnimal = snap.fallingAnimals[0];
         let bestScore = -1;
         for (const animal of snap.fallingAnimals) {

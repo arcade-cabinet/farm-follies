@@ -7,6 +7,7 @@
 
 import { feedback } from "@/platform";
 import { type GameState as DirectorGameState, GameDirector } from "../ai/GameDirector";
+import type { GovernorSnapshot } from "../ai/PlayerGovernor";
 import { GAME_CONFIG, POWER_UPS, type PowerUpType } from "../config";
 // Particle effects
 import { ParticleSystem } from "../effects/ParticleEffects";
@@ -379,27 +380,7 @@ export class Game {
    * Returns positions of the player and all falling animals so an
    * external governor can decide where to move.
    */
-  getTestSnapshot(): {
-    player: { x: number; y: number; width: number; height: number } | null;
-    fallingAnimals: Array<{
-      id: string;
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      velocityY: number;
-    }>;
-    score: number;
-    lives: number;
-    level: number;
-    combo: number;
-    stackHeight: number;
-    bankedAnimals: number;
-    canBank: boolean;
-    isPlaying: boolean;
-    canvasWidth: number;
-    canvasHeight: number;
-  } {
+  getTestSnapshot(): GovernorSnapshot {
     const player = this.entities.get<PlayerEntity>("player");
     const animals = this.entities.getByType<AnimalEntity>("animal");
 

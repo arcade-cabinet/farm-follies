@@ -40,6 +40,38 @@ export interface GovernorStats {
   idleFrames: number;
 }
 
+// ── Shared Helpers ────────────────────────────────────────────────
+
+interface ScoredAnimal {
+  animal: GovernorSnapshot["fallingAnimals"][number];
+  score: number;
+}
+
+/**
+ * Find the most urgent falling animal (closest to the floor line).
+ * Shared by CatchEvaluator (desirability) and executeCatch (targeting).
+ */
+function findMostUrgentAnimal(snap: GovernorSnapshot): ScoredAnimal | null {
+  if (!snap.player || snap.fallingAnimals.length === 0) return null;
+
+  const floorY = snap.player.y + snap.player.height;
+  if (floorY <= 0) return null; // Guard against division by zero
+
+  let best: ScoredAnimal = { animal: snap.fallingAnimals[0], score: -1 };
+
+  for (const animal of snap.fallingAnimals) {
+    const urgency = animal.y / floorY; // 0 at top, ~1 at floor
+    const inRange = animal.y > floorY * 0.5 ? 0.2 : 0;
+    const score = urgency + inRange;
+
+    if (score > best.score) {
+      best = { animal, score };
+    }
+  }
+
+  return best;
+}
+
 // ── Goal Evaluators ────────────────────────────────────────────────
 
 /**
@@ -50,20 +82,13 @@ class CatchEvaluator extends GoalEvaluator<GameEntity> {
   calculateDesirability(owner: GameEntity): number {
     const gov = owner as PlayerGovernor;
     const snap = gov.lastSnapshot;
-    if (!snap || !snap.player || snap.fallingAnimals.length === 0) return 0;
+    if (!snap) return 0;
 
-    // Higher desirability when animals are close to the player's Y
-    const floorY = snap.player.y;
-    const closest = snap.fallingAnimals.reduce(
-      (best, a) => {
-        const urgency = a.y / floorY; // 0 at top, 1 at floor
-        return urgency > best.urgency ? { urgency, animal: a } : best;
-      },
-      { urgency: -1, animal: snap.fallingAnimals[0] }
-    );
+    const result = findMostUrgentAnimal(snap);
+    if (!result) return 0;
 
-    // Scale from 0.3 (animal just spawned) to 1.0 (about to hit floor)
-    return Math.max(0.1, Math.min(1.0, closest.urgency));
+    // Scale from 0.1 (animal just spawned) to 1.0 (about to hit floor)
+    return Math.max(0.1, Math.min(1.0, result.score));
   }
 
   setGoal(owner: GameEntity): void {
@@ -120,6 +145,7 @@ export class PlayerGovernor extends GameEntity {
   private _bankStack: () => void;
   private rafId: number | null = null;
   private isDragging = false;
+  private cachedRect: DOMRect | null = null;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -172,6 +198,9 @@ export class PlayerGovernor extends GameEntity {
 
     this.stats.framesRun++;
 
+    // Cache canvas rect once per frame (avoids repeated layout queries)
+    this.cachedRect = this.canvas.getBoundingClientRect();
+
     // YUKA brain evaluates goals and selects the best one
     this.brain.execute();
 
@@ -195,28 +224,13 @@ export class PlayerGovernor extends GameEntity {
 
   private executeCatch(): void {
     const snap = this.lastSnapshot;
-    if (!snap?.player || snap.fallingAnimals.length === 0) return;
+    if (!snap) return;
 
-    // Pick the most urgent animal (closest to floor)
-    const floorY = snap.player.y + snap.player.height;
-    let bestAnimal = snap.fallingAnimals[0];
-    let bestUrgency = -1;
-
-    for (const animal of snap.fallingAnimals) {
-      // Urgency based on Y position relative to floor
-      const urgency = animal.y / floorY;
-      // Bonus for animals within catch range (close to player Y)
-      const inRange = animal.y > floorY * 0.5 ? 0.2 : 0;
-      const score = urgency + inRange;
-
-      if (score > bestUrgency) {
-        bestUrgency = score;
-        bestAnimal = animal;
-      }
-    }
+    const result = findMostUrgentAnimal(snap);
+    if (!result) return;
 
     // Move toward the target animal's X center
-    this.moveToX(bestAnimal.x);
+    this.moveToX(result.animal.x);
     this.stats.catchAttempts++;
   }
 
@@ -244,8 +258,12 @@ export class PlayerGovernor extends GameEntity {
     this.dispatchPointerMove(targetX);
   }
 
+  private getRect(): DOMRect {
+    return this.cachedRect ?? this.canvas.getBoundingClientRect();
+  }
+
   private dispatchPointerDown(x: number): void {
-    const rect = this.canvas.getBoundingClientRect();
+    const rect = this.getRect();
     const clientX = rect.left + x;
     const clientY = rect.top + rect.height * 0.8; // Near bottom where player is
     this.canvas.dispatchEvent(new MouseEvent("mousedown", { clientX, clientY, bubbles: true }));
@@ -253,14 +271,14 @@ export class PlayerGovernor extends GameEntity {
   }
 
   private dispatchPointerMove(x: number): void {
-    const rect = this.canvas.getBoundingClientRect();
+    const rect = this.getRect();
     const clientX = rect.left + x;
     const clientY = rect.top + rect.height * 0.8;
     this.canvas.dispatchEvent(new MouseEvent("mousemove", { clientX, clientY, bubbles: true }));
   }
 
   private dispatchPointerUp(): void {
-    const rect = this.canvas.getBoundingClientRect();
+    const rect = this.getRect();
     const clientX = rect.left + (this.lastSnapshot?.canvasWidth ?? 200) / 2;
     const clientY = rect.top + rect.height * 0.8;
     this.canvas.dispatchEvent(new MouseEvent("mouseup", { clientX, clientY, bubbles: true }));

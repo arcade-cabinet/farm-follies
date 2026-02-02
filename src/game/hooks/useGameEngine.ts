@@ -163,6 +163,10 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
       engine.destroy();
       for (const t of timeoutsRef.current) clearTimeout(t);
       timeoutsRef.current.clear();
+      // Clean up dev-mode game reference to avoid stale references
+      if (import.meta.env.DEV) {
+        delete (window as unknown as Record<string, unknown>).__game;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
