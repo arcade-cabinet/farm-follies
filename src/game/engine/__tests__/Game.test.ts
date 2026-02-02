@@ -11,7 +11,7 @@ import { GAME_CONFIG, POWER_UPS } from "../../config";
 import type { AnimalEntity } from "../entities/Animal";
 import type { PlayerEntity } from "../entities/Player";
 import type { PowerUpEntity } from "../entities/PowerUp";
-import { Game, createGame, type GameCallbacks } from "../Game";
+import { createGame, Game, type GameCallbacks } from "../Game";
 
 // ---------------------------------------------------------------------------
 // Mock platform feedback (must be before Game import at module level)
@@ -947,8 +947,7 @@ describe("Game", () => {
       }
 
       const player = getPlayer(g)!;
-      const playerRight =
-        player.transform.position.x + (player.bounds?.width ?? 80);
+      const playerRight = player.transform.position.x + (player.bounds?.width ?? 80);
       const scale = internals(g).scale;
       const maxRight = mockCanvas.width - scale.bankWidth;
       expect(playerRight).toBeLessThanOrEqual(maxRight + 20); // small tolerance for edge rounding
@@ -1049,10 +1048,7 @@ describe("Game", () => {
         mockNow += 100;
       }
 
-      expect(callbacks.onGameOver).toHaveBeenCalledWith(
-        expect.any(Number),
-        expect.any(Number)
-      );
+      expect(callbacks.onGameOver).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
     });
   });
 
@@ -1405,9 +1401,7 @@ describe("Game", () => {
       // but the important thing is the score callback was called twice
       const scoreCalls = (callbacks.onScoreChange as ReturnType<typeof vi.fn>).mock.calls;
       // Filter out the initial start call (score=0, multiplier=1, combo=0)
-      const catchScoreCalls = scoreCalls.filter(
-        (call: [number, number, number]) => call[0] > 0
-      );
+      const catchScoreCalls = scoreCalls.filter((call: [number, number, number]) => call[0] > 0);
       expect(catchScoreCalls.length).toBeGreaterThanOrEqual(2);
     });
   });

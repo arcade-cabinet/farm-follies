@@ -59,7 +59,7 @@ class CatchEvaluator extends GoalEvaluator<GameEntity> {
         const urgency = a.y / floorY; // 0 at top, 1 at floor
         return urgency > best.urgency ? { urgency, animal: a } : best;
       },
-      { urgency: -1, animal: snap.fallingAnimals[0] },
+      { urgency: -1, animal: snap.fallingAnimals[0] }
     );
 
     // Scale from 0.3 (animal just spawned) to 1.0 (about to hit floor)
@@ -124,7 +124,7 @@ export class PlayerGovernor extends GameEntity {
   constructor(
     canvas: HTMLCanvasElement,
     getSnapshot: () => GovernorSnapshot,
-    bankStack: () => void,
+    bankStack: () => void
   ) {
     super();
     this.canvas = canvas;
@@ -248,9 +248,7 @@ export class PlayerGovernor extends GameEntity {
     const rect = this.canvas.getBoundingClientRect();
     const clientX = rect.left + x;
     const clientY = rect.top + rect.height * 0.8; // Near bottom where player is
-    this.canvas.dispatchEvent(
-      new MouseEvent("mousedown", { clientX, clientY, bubbles: true }),
-    );
+    this.canvas.dispatchEvent(new MouseEvent("mousedown", { clientX, clientY, bubbles: true }));
     this.isDragging = true;
   }
 
@@ -258,18 +256,14 @@ export class PlayerGovernor extends GameEntity {
     const rect = this.canvas.getBoundingClientRect();
     const clientX = rect.left + x;
     const clientY = rect.top + rect.height * 0.8;
-    this.canvas.dispatchEvent(
-      new MouseEvent("mousemove", { clientX, clientY, bubbles: true }),
-    );
+    this.canvas.dispatchEvent(new MouseEvent("mousemove", { clientX, clientY, bubbles: true }));
   }
 
   private dispatchPointerUp(): void {
     const rect = this.canvas.getBoundingClientRect();
     const clientX = rect.left + (this.lastSnapshot?.canvasWidth ?? 200) / 2;
     const clientY = rect.top + rect.height * 0.8;
-    this.canvas.dispatchEvent(
-      new MouseEvent("mouseup", { clientX, clientY, bubbles: true }),
-    );
+    this.canvas.dispatchEvent(new MouseEvent("mouseup", { clientX, clientY, bubbles: true }));
     this.isDragging = false;
   }
 }

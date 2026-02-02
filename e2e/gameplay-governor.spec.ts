@@ -19,7 +19,8 @@
  * Requires: `import.meta.env.DEV` exposes `window.__game` in useGameEngine.
  */
 
-import { expect, test, type Page } from "@playwright/test";
+// biome-ignore-all lint/suspicious/noExplicitAny: E2E tests use window globals via page.evaluate()
+import { expect, type Page, test } from "@playwright/test";
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -98,6 +99,23 @@ async function injectGovernor(page: Page) {
         }
       }
 
+      private findBestTarget(snap: any): { x: number } | null {
+        if (!snap.player || snap.fallingAnimals.length === 0) return null;
+        const floorY = snap.player.y + snap.player.height;
+        let bestAnimal = snap.fallingAnimals[0];
+        let bestScore = -1;
+        for (const animal of snap.fallingAnimals) {
+          const urgency = animal.y / floorY;
+          const bonus = animal.y > floorY * 0.5 ? 0.2 : 0;
+          const score = urgency + bonus;
+          if (score > bestScore) {
+            bestScore = score;
+            bestAnimal = animal;
+          }
+        }
+        return bestAnimal;
+      }
+
       private tick = () => {
         const snap = this.gameInstance.getTestSnapshot();
         if (!snap.isPlaying) {
@@ -107,29 +125,14 @@ async function injectGovernor(page: Page) {
 
         this.stats.framesRun++;
 
-        // Bank if stack is 3+ and banking is available
         if (snap.canBank && snap.stackHeight >= 3) {
           this.gameInstance.bankStack();
           this.stats.banksTriggered++;
         }
 
-        // Chase nearest falling animal
-        if (snap.player && snap.fallingAnimals.length > 0) {
-          const floorY = snap.player.y + snap.player.height;
-          let bestAnimal = snap.fallingAnimals[0];
-          let bestScore = -1;
-
-          for (const animal of snap.fallingAnimals) {
-            const urgency = animal.y / floorY;
-            const bonus = animal.y > floorY * 0.5 ? 0.2 : 0;
-            const score = urgency + bonus;
-            if (score > bestScore) {
-              bestScore = score;
-              bestAnimal = animal;
-            }
-          }
-
-          this.moveToX(bestAnimal.x);
+        const target = this.findBestTarget(snap);
+        if (target) {
+          this.moveToX(target.x);
           this.stats.catchAttempts++;
         } else if (snap.player) {
           this.moveToX(snap.canvasWidth / 2);
