@@ -259,15 +259,6 @@ export const GAME_CONFIG = {
     mergeScalePerAnimal: 0.12,
     maxMergeScale: 2.5,
   },
-  
-  // Legacy duck config (maps to animal for backward compatibility)
-  duck: {
-    width: 70,
-    height: 60,
-    mergeScaleBase: 1.0,
-    mergeScalePerDuck: 0.12,
-    maxMergeScale: 2.5,
-  },
 
   // Physics
   physics: {
@@ -379,7 +370,6 @@ export const GAME_CONFIG = {
     particleDecay: 0.022,
     mergeParticles: 30,
     mergeFlashDuration: 500,
-    iceShardCount: 8,
   },
 
   // Scoring system
@@ -463,11 +453,11 @@ export const GAME_CONFIG = {
     warning: FARM_COLORS.ui.warning,
     heart: FARM_COLORS.ui.heart,
     heartEmpty: FARM_COLORS.ui.heartEmpty,
-    // Duck animal colors (used by PeekingAnimal)
-    duck: {
-      body: FARM_COLORS.animals.duck.body,
-      beak: FARM_COLORS.animals.duck.beak,
-      feet: FARM_COLORS.animals.duck.feet,
+    // Default peeking animal colors (used by PeekingAnimal)
+    peekingAnimal: {
+      body: FARM_COLORS.animals.chicken.body,
+      beak: FARM_COLORS.animals.chicken.beak,
+      accent: FARM_COLORS.animals.chicken.comb,
       outline: '#8B7355',
     },
     // Bank button (barn-themed)
@@ -477,26 +467,18 @@ export const GAME_CONFIG = {
       band: FARM_COLORS.ui.text,
       button: FARM_COLORS.ground.hay,
     },
-    // Fire effect colors
-    fire: {
+    // Warm glow effect colors (used for ability activations)
+    warmGlow: {
       core: '#FFEB3B',
       mid: '#FF9800',
       outer: '#FF5722',
-    },
-    // Ice effect colors
-    ice: {
-      core: '#E1F5FE',
-      mid: '#4FC3F7',
-      outer: '#0288D1',
-      solid: '#81D4FA',
-      crack: '#01579B',
-      shard: '#B3E5FC',
     },
   },
 } as const;
 
 // Animal type config — all animals use the same base config now
 // (special abilities are defined per-variant in ANIMAL_ARCHETYPES)
+// Individual animal colors come from ANIMAL_BASE_COLORS in archetypes.ts
 export type AnimalTypeConfig = 'normal';
 
 export const ANIMAL_TYPE_CONFIGS = {
@@ -504,8 +486,8 @@ export const ANIMAL_TYPE_CONFIGS = {
     spawnWeight: 1.0,
     ability: null,
     colors: {
-      body: FARM_COLORS.animals.duck.body,
-      beak: FARM_COLORS.animals.duck.beak,
+      body: FARM_COLORS.animals.chicken.body,
+      beak: FARM_COLORS.animals.chicken.beak,
     },
   },
 } as const;

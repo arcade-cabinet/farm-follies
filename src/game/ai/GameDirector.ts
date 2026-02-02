@@ -313,7 +313,7 @@ export class GameDirector extends GameEntity {
     // Calculate spawn position strategically
     const spawnX = this.calculateSpawnX(state);
 
-    // Determine duck type based on difficulty
+    // Determine animal type based on difficulty
     const animalType = this.chooseAnimalType();
 
     // Determine AI behavior
@@ -322,7 +322,7 @@ export class GameDirector extends GameEntity {
     // Calculate initial momentum
     const { vx, vy } = this.calculateInitialVelocity(spawnX, state);
 
-    // Target bias (how much the duck aims at player)
+    // Target bias (how much the animal aims at player)
     const targetBias = this.calculateTargetBias();
 
     return {

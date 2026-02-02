@@ -11,11 +11,7 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 export default defineConfig({
   cacheDir: ".vite",
   plugins: [
-    react({
-      babel: {
-        plugins: ["styled-jsx/babel"],
-      },
-    }),
+    react(),
     tailwindcss(),
     // vitePluginErrorOverlay(),
     // checker({

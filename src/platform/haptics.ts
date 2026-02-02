@@ -26,7 +26,7 @@ class HapticsManager {
   }
 
   /**
-   * Medium impact - for game events (duck landing)
+   * Medium impact - for game events (animal landing)
    */
   async medium(): Promise<void> {
     if (!this.available) return;

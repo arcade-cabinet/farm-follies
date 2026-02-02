@@ -32,7 +32,7 @@ export function PeekingAnimal({ scale = 1 }: PeekingAnimalProps) {
       ctx.clearRect(0, 0, w * 2, h * 2);
       ctx.save();
 
-      // Center the duck
+      // Center the animal
       const centerX = side === "left" ? w * 0.7 : w * 0.3;
       const centerY = h * 0.55;
       ctx.translate(centerX, centerY);
@@ -52,8 +52,8 @@ export function PeekingAnimal({ scale = 1 }: PeekingAnimalProps) {
       ctx.fill();
 
       // Body
-      ctx.fillStyle = GAME_CONFIG.colors.duck.body;
-      ctx.strokeStyle = GAME_CONFIG.colors.duck.outline;
+      ctx.fillStyle = GAME_CONFIG.colors.peekingAnimal.body;
+      ctx.strokeStyle = GAME_CONFIG.colors.peekingAnimal.outline;
       ctx.lineWidth = 2.5 * scale;
       ctx.beginPath();
       ctx.ellipse(0, 0, dw * 0.4, dh * 0.4, 0, 0, Math.PI * 2);
@@ -61,14 +61,14 @@ export function PeekingAnimal({ scale = 1 }: PeekingAnimalProps) {
       ctx.stroke();
 
       // Arm (peeking pose - one arm visible holding edge)
-      ctx.fillStyle = GAME_CONFIG.colors.duck.body;
+      ctx.fillStyle = GAME_CONFIG.colors.peekingAnimal.body;
       ctx.beginPath();
       ctx.ellipse(-dw * 0.35, -dh * 0.05, dw * 0.12, dh * 0.2, 0.3, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
       // Head
-      ctx.fillStyle = GAME_CONFIG.colors.duck.body;
+      ctx.fillStyle = GAME_CONFIG.colors.peekingAnimal.body;
       ctx.beginPath();
       ctx.ellipse(0, -dh * 0.35, dw * 0.35, dh * 0.35, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -85,14 +85,14 @@ export function PeekingAnimal({ scale = 1 }: PeekingAnimalProps) {
       ctx.stroke();
 
       // Beak
-      ctx.fillStyle = GAME_CONFIG.colors.duck.beak;
+      ctx.fillStyle = GAME_CONFIG.colors.peekingAnimal.beak;
       ctx.beginPath();
       ctx.ellipse(0, -dh * 0.28, dw * 0.22, dh * 0.1, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
       // Nostrils
-      ctx.fillStyle = GAME_CONFIG.colors.duck.outline;
+      ctx.fillStyle = GAME_CONFIG.colors.peekingAnimal.outline;
       ctx.beginPath();
       ctx.arc(-4 * scale, -dh * 0.32, 1.5 * scale, 0, Math.PI * 2);
       ctx.arc(4 * scale, -dh * 0.32, 1.5 * scale, 0, Math.PI * 2);
@@ -101,7 +101,7 @@ export function PeekingAnimal({ scale = 1 }: PeekingAnimalProps) {
       // Eyes
       if (blinking) {
         // Closed eyes (happy squint)
-        ctx.strokeStyle = GAME_CONFIG.colors.duck.outline;
+        ctx.strokeStyle = GAME_CONFIG.colors.peekingAnimal.outline;
         ctx.lineWidth = 2 * scale;
         ctx.beginPath();
         ctx.arc(-dw * 0.12, -dh * 0.42, 6 * scale, 0.2, Math.PI - 0.2);
@@ -112,7 +112,7 @@ export function PeekingAnimal({ scale = 1 }: PeekingAnimalProps) {
       } else {
         // Open eyes
         ctx.fillStyle = "#FFF";
-        ctx.strokeStyle = GAME_CONFIG.colors.duck.outline;
+        ctx.strokeStyle = GAME_CONFIG.colors.peekingAnimal.outline;
         ctx.lineWidth = 2 * scale;
 
         // Left eye

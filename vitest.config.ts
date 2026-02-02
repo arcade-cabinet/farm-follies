@@ -5,11 +5,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [
-    react({
-      babel: {
-        plugins: ["styled-jsx/babel"],
-      },
-    }),
+    react(),
     tailwindcss(),
   ],
   test: {

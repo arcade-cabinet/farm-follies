@@ -299,7 +299,7 @@ function nextEffectId(state: AbilitySystemState): {
 
 /**
  * Returns the fall-speed multiplier for an animal.
- * For special ducks with feather_float, this is 0.3; for all others, 1.0.
+ * For special animals with feather_float, this is 0.3; for all others, 1.0.
  */
 export function getFeatherFloatMultiplier(animal: AnimalEntity): number {
   if (!animal.animal.abilityReady || animal.animal.state !== "falling") return 1.0;
