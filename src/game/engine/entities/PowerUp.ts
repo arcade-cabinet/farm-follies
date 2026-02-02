@@ -23,21 +23,6 @@ export interface PowerUpEntity extends Entity {
 }
 
 /**
- * Normalize legacy power-up type names to farm-themed names
- */
-function normalizePowerUpType(type: PowerUpType): PowerUpType {
-  const legacyMap: Partial<Record<PowerUpType, PowerUpType>> = {
-    potion: "hay_bale",
-    rare_candy: "corn_feed",
-    great_ball: "water_trough",
-    x_attack: "golden_egg",
-    full_restore: "salt_lick",
-    max_up: "lucky_horseshoe",
-  };
-  return legacyMap[type] ?? type;
-}
-
-/**
  * Create a power-up entity
  */
 export function createPowerUp(
@@ -45,8 +30,7 @@ export function createPowerUp(
   y: number,
   type: PowerUpType,
 ): PowerUpEntity {
-  const normalized = normalizePowerUpType(type);
-  const config = POWER_UPS[normalized] ?? POWER_UPS[type];
+  const config = POWER_UPS[type];
   const size = 40;
 
   const base = createEntity("powerup", x - size / 2, y - size / 2, {
@@ -62,7 +46,7 @@ export function createPowerUp(
       angular: 0,
     },
     powerup: {
-      powerUpType: normalized,
+      powerUpType: type,
       bobPhase: Math.random() * Math.PI * 2,
       glowColor: config?.glowColor ?? "#FFD700",
       name: config?.name ?? "Power-Up",

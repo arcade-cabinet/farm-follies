@@ -16,7 +16,7 @@ const SFX_NAMES = [
   "fail",
   "powerup",
   "freeze",
-  "fireball",
+  "ability",
   "levelup",
   "lifeup",
 ] as const;

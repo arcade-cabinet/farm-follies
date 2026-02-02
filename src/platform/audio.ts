@@ -17,7 +17,7 @@ const SFX_FILES: Record<SoundType, string> = {
   fail: `${AUDIO_BASE}/sfx/fail.ogg`,
   powerup: `${AUDIO_BASE}/sfx/powerup.ogg`,
   freeze: `${AUDIO_BASE}/sfx/freeze.ogg`,
-  fireball: `${AUDIO_BASE}/sfx/fireball.ogg`,
+  ability: `${AUDIO_BASE}/sfx/ability.ogg`,
   levelup: `${AUDIO_BASE}/sfx/levelup.ogg`,
   lifeup: `${AUDIO_BASE}/sfx/lifeup.ogg`,
   bank: `${AUDIO_BASE}/sfx/bank.ogg`,

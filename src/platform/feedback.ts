@@ -92,7 +92,7 @@ class FeedbackManager {
         case "freeze":
           await haptics.medium();
           break;
-        case "fireball":
+        case "ability":
           await haptics.heavy();
           break;
         case "levelup":

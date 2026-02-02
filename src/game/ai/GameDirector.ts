@@ -533,7 +533,7 @@ export class GameDirector extends GameEntity {
    */
   decidePowerUp(): PowerUpDecision {
     if (!this.gameState) {
-      return { shouldSpawn: false, type: "potion", x: 0, timing: "immediate" };
+      return { shouldSpawn: false, type: "hay_bale", x: 0, timing: "immediate" };
     }
 
     const state = this.gameState;
@@ -553,14 +553,14 @@ export class GameDirector extends GameEntity {
 
     // Time since last power-up
     if (state.timeSinceLastPowerUp < 8000) {
-      return { shouldSpawn: false, type: "potion", x: 0, timing: "immediate" };
+      return { shouldSpawn: false, type: "hay_bale", x: 0, timing: "immediate" };
     }
 
     // Reward goal increases chance
     if (this.activeGoal === "reward") spawnChance *= 2;
 
     if (Math.random() > spawnChance) {
-      return { shouldSpawn: false, type: "potion", x: 0, timing: "immediate" };
+      return { shouldSpawn: false, type: "hay_bale", x: 0, timing: "immediate" };
     }
 
     // Choose power-up type intelligently
@@ -585,44 +585,44 @@ export class GameDirector extends GameEntity {
    * Choose power-up type based on game state
    */
   private choosePowerUpType(state: GameState): PowerUpType {
-    // Potions when low on lives
+    // Hay bale (extra life) when low on lives
     if (state.lives < state.maxLives && state.lives <= 2) {
-      if (Math.random() < 0.5) return "potion";
+      if (Math.random() < 0.5) return "hay_bale";
     }
 
-    // Full restore when critical
+    // Salt lick (full restore + invincibility) when critical
     if (state.lives === 1 && Math.random() < 0.3) {
-      return "full_restore";
+      return "salt_lick";
     }
 
-    // Rare candy when stack is big enough
+    // Corn feed (merge stack into bank) when stack is big enough
     if (state.stackHeight >= 5 && Math.random() < 0.2) {
-      return "rare_candy";
+      return "corn_feed";
     }
 
-    // Great ball when many animals falling
+    // Water trough (magnetic pull) when many animals falling
     if (state.activeAnimals > 2 && Math.random() < 0.25) {
-      return "great_ball";
+      return "water_trough";
     }
 
-    // X Attack for skilled players on good runs
+    // Golden egg (double points) for skilled players on good runs
     if (this.playerSkill > 0.7 && state.combo > 3 && Math.random() < 0.2) {
-      return "x_attack";
+      return "golden_egg";
     }
 
-    // HP Up rarely
+    // Lucky horseshoe (increase max hearts) rarely
     if (state.maxLives < 8 && Math.random() < 0.1) {
-      return "max_up";
+      return "lucky_horseshoe";
     }
 
     // Default weighted random
     const roll = Math.random();
-    if (roll < 0.35) return "potion";
-    if (roll < 0.5) return "great_ball";
-    if (roll < 0.65) return "x_attack";
-    if (roll < 0.78) return "rare_candy";
-    if (roll < 0.9) return "max_up";
-    return "full_restore";
+    if (roll < 0.35) return "hay_bale";
+    if (roll < 0.5) return "water_trough";
+    if (roll < 0.65) return "golden_egg";
+    if (roll < 0.78) return "corn_feed";
+    if (roll < 0.9) return "lucky_horseshoe";
+    return "salt_lick";
   }
 
   /**

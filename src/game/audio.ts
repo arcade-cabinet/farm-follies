@@ -12,7 +12,7 @@ export type SoundType =
   | "fail"
   | "powerup"
   | "freeze"
-  | "fireball"
+  | "ability"
   | "levelup"
   | "lifeup"
   | "bank"
@@ -246,8 +246,8 @@ class AudioManager {
       case "freeze":
         this.playFreezeSound(now);
         break;
-      case "fireball":
-        this.playFireballSound(now);
+      case "ability":
+        this.playAbilitySound(now);
         break;
       case "levelup":
         this.playLevelUpSound(now);
@@ -348,7 +348,7 @@ class AudioManager {
     }
   }
 
-  private playFireballSound(time: number): void {
+  private playAbilitySound(time: number): void {
     // Whooshy fire burst
     if (this.noiseSynth) {
       this.noiseSynth.triggerAttackRelease("8n", time, 0.5);

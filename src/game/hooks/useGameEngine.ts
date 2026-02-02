@@ -46,8 +46,6 @@ interface UseGameEngineOptions {
   onPowerUp?: (type: string) => void;
   onMerge?: (count: number) => void;
   onPerfectCatch?: () => void;
-  onFireballShot?: () => void;
-  onAnimalFrozen?: () => void;
 }
 
 export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngineReturn {
@@ -152,8 +150,6 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
     options.onLevelUp,
     options.onLifeEarned,
     options.onStackTopple,
-    options.onAnimalFrozen,
-    options.onFireballShot,
     options.onMerge,
     options.onPerfectCatch,
     options.onPowerUp,

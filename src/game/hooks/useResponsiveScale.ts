@@ -10,7 +10,7 @@ export interface ResponsiveScales {
   base: number;
   // UI scale for buttons, text, etc.
   ui: number;
-  // Game scale for duck size, physics, etc.
+  // Game scale for animal size, physics, etc.
   game: number;
   // Font sizes
   fontSize: {
@@ -164,9 +164,9 @@ export function useResponsiveScale(): ResponsiveScales {
 }
 
 /**
- * Get responsive duck dimensions
+ * Get responsive animal dimensions
  */
-export function getResponsiveDuckSize(gameScale: number) {
+export function getResponsiveAnimalSize(gameScale: number) {
   const baseWidth = 80;
   const baseHeight = 70;
 

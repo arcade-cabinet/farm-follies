@@ -216,7 +216,7 @@ export class GameStateManager {
   bankAnimals(count: number): number {
     if (count < banking.minStackToBank) return 0;
     
-    const bankBonus = count * scoring.bankingBonusPerDuck * this.state.currentMultiplier;
+    const bankBonus = count * scoring.bankingBonusPerAnimal * this.state.currentMultiplier;
     this.state.score += Math.floor(bankBonus);
     this.state.bankedAnimals += count;
     

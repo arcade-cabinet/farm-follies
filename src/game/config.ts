@@ -15,19 +15,12 @@ export type AnimalType = 'cow' | 'chicken' | 'pig' | 'sheep' | 'goat' | 'duck' |
 
 // Power-up types (farm-themed + legacy aliases for backwards compat)
 export type PowerUpType =
-  | "hay_bale"      // Extra life (farm)
-  | "golden_egg"    // Double points (farm)
-  | "water_trough"  // Magnetic pull (farm)
-  | "salt_lick"     // Full restore (farm)
-  | "corn_feed"     // Merge stack (farm)
-  | "lucky_horseshoe" // Invincibility (farm)
-  // Legacy names (map to farm equivalents)
-  | "potion"        // -> hay_bale
-  | "rare_candy"    // -> corn_feed
-  | "great_ball"    // -> water_trough
-  | "x_attack"      // -> golden_egg
-  | "full_restore"  // -> salt_lick
-  | "max_up";       // -> lucky_horseshoe
+  | "hay_bale"         // Extra life
+  | "golden_egg"       // Double points
+  | "water_trough"     // Magnetic pull
+  | "salt_lick"        // Full restore + invincibility
+  | "corn_feed"        // Merge stack into bank
+  | "lucky_horseshoe"; // Increase max hearts
 
 export const ANIMAL_TYPES = {
   cow: {
@@ -128,48 +121,6 @@ export const POWER_UPS = {
     description: "Increase max hearts by 1",
     spawnWeight: 0.08,
     glowColor: '#C0C0C0',
-  },
-  // Legacy names (aliased to farm equivalents)
-  potion: {
-    name: "Hay Bale",
-    description: "Restore one heart",
-    spawnWeight: 0.35,
-    glowColor: '#FF69B4',
-  },
-  rare_candy: {
-    name: "Corn Feed",
-    description: "Merge stack into one mega animal!",
-    spawnWeight: 0.12,
-    minStackToUse: 3,
-    glowColor: '#00BFFF',
-  },
-  great_ball: {
-    name: "Water Trough",
-    description: "Magnetic pull for 5 seconds!",
-    spawnWeight: 0.15,
-    duration: 5000,
-    glowColor: '#2196F3',
-  },
-  x_attack: {
-    name: "Golden Egg",
-    description: "Double points for 8 seconds!",
-    spawnWeight: 0.15,
-    duration: 8000,
-    multiplier: 2,
-    glowColor: '#FF5722',
-  },
-  full_restore: {
-    name: "Salt Lick",
-    description: "Full hearts + 3s invincibility!",
-    spawnWeight: 0.05,
-    invincibilityDuration: 3000,
-    glowColor: '#FFEB3B',
-  },
-  max_up: {
-    name: "Lucky Horseshoe",
-    description: "Increase max hearts by 1",
-    spawnWeight: 0.08,
-    glowColor: '#4CAF50',
   },
 } as const;
 
@@ -456,11 +407,7 @@ export const GAME_CONFIG = {
     
     specialAbilityBonus: 25,
     bushBounceBonus: 15,
-    
-    // Legacy duck-specific scoring
-    bankingBonusPerDuck: 5,
-    mergeBonusPerDuck: 20,
-    fireKillBonus: 50,
+    abilityKillBonus: 50,
   },
 
   // Banking system

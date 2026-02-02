@@ -53,8 +53,8 @@ export function calculateScale(width: number, height: number): ScaleFactors {
   }
   
   // Entity size scales with factor but has hard limits for playability
-  const baseEntityWidth = GAME_CONFIG.duck.width;
-  const baseEntityHeight = GAME_CONFIG.duck.height;
+  const baseEntityWidth = GAME_CONFIG.animal.width;
+  const baseEntityHeight = GAME_CONFIG.animal.height;
   const entityWidth = Math.max(45, Math.min(100, baseEntityWidth * factor));
   const entityHeight = Math.max(40, Math.min(85, baseEntityHeight * factor));
   

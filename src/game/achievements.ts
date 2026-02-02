@@ -34,8 +34,8 @@ export interface GameStats {
   maxStack: number;
   maxCombo: number;
   totalBanked: number;
-  fireballsShot: number;
-  ducksFrozen: number;
+  abilitiesUsed: number;
+  animalsStunned: number;
   powerUpsCollected: number;
   livesEarned: number;
   totalPlayTime: number; // seconds
@@ -179,22 +179,22 @@ const ACHIEVEMENTS: AchievementData[] = [
 
   // Special abilities
   {
-    id: "pyromaniac",
-    name: "Pyromaniac",
-    description: "Shoot 10 fireballs",
-    icon: "🔥",
+    id: "ability_master",
+    name: "Ability Master",
+    description: "Use 10 animal abilities",
+    icon: "⚡",
     tier: "bronze",
-    condition: (s) => s.fireballsShot >= 10,
-    progress: (s) => ({ current: s.fireballsShot, max: 10 }),
+    condition: (s) => s.abilitiesUsed >= 10,
+    progress: (s) => ({ current: s.abilitiesUsed, max: 10 }),
   },
   {
-    id: "ice_age",
-    name: "Ice Age",
-    description: "Freeze 10 animals",
-    icon: "❄️",
+    id: "crowd_control",
+    name: "Crowd Control",
+    description: "Stun 10 animals",
+    icon: "💫",
     tier: "bronze",
-    condition: (s) => s.ducksFrozen >= 10,
-    progress: (s) => ({ current: s.ducksFrozen, max: 10 }),
+    condition: (s) => s.animalsStunned >= 10,
+    progress: (s) => ({ current: s.animalsStunned, max: 10 }),
   },
 
   // Power-up achievements
@@ -256,8 +256,8 @@ function getDefaultStats(): GameStats {
     maxStack: 0,
     maxCombo: 0,
     totalBanked: 0,
-    fireballsShot: 0,
-    ducksFrozen: 0,
+    abilitiesUsed: 0,
+    animalsStunned: 0,
     powerUpsCollected: 0,
     livesEarned: 0,
     totalPlayTime: 0,

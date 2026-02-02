@@ -21,7 +21,7 @@ export class WobbleGovernor extends GameEntity {
 
   // Game state inputs
   stackHeight: number = 0;
-  threatLevel: number = 0; // Based on falling ducks
+  threatLevel: number = 0; // Based on falling animals
   playerStress: number = 0; // Based on recent mistakes/close calls
   gameLevel: number = 1;
   dangerState: boolean = false;
@@ -90,7 +90,7 @@ export class WobbleGovernor extends GameEntity {
    */
   updateGameState(
     stackHeight: number,
-    fallingDucks: Array<{ behaviorType: string; y: number; targetY: number }>,
+    fallingAnimals: Array<{ behaviorType: string; y: number; targetY: number }>,
     recentMisses: number,
     gameLevel: number,
     inDanger: boolean
@@ -99,12 +99,12 @@ export class WobbleGovernor extends GameEntity {
     this.gameLevel = gameLevel;
     this.dangerState = inDanger;
 
-    // Calculate threat level from falling ducks
+    // Calculate threat level from falling animals
     let threat = 0;
-    for (const duck of fallingDucks) {
-      const distanceFactor = Math.max(0, 1 - Math.abs(duck.y - duck.targetY) / 600);
+    for (const animal of fallingAnimals) {
+      const distanceFactor = Math.max(0, 1 - Math.abs(animal.y - animal.targetY) / 600);
 
-      switch (duck.behaviorType) {
+      switch (animal.behaviorType) {
         case "seeker":
         case "dive":
           threat += 0.15 * distanceFactor;
