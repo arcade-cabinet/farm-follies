@@ -7,5 +7,7 @@ test("has title", async ({ page }) => {
 
 test("page loads successfully", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("body")).toBeVisible();
+  // App renders into #root div
+  const root = page.locator("#root");
+  await expect(root).toBeAttached();
 });

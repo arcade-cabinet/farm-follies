@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-const STORAGE_KEY = "psyduck_highscore";
+const STORAGE_KEY = "farm-follies-highscore";
 
 export interface UseHighScoreReturn {
   highScore: number;

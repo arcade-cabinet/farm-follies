@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Development
 pnpm dev                    # Vite dev server (localhost:5173)
 pnpm build                  # Development build -> dist/
-pnpm build:prod             # Production build -> dist/
+pnpm build:prod             # Production build -> dist/ (844 KB)
 pnpm preview                # Preview production build (port 8080)
 
 # Type checking
@@ -27,7 +27,7 @@ pnpm check                  # Lint + type check combined (biome check + tsgo --n
 
 # Unit Testing (Vitest)
 pnpm test                   # Watch mode
-pnpm test:run               # Single run
+pnpm test:run               # Single run (328 tests across 14 files)
 pnpm test:ui                # Vitest browser UI
 pnpm test:coverage          # Coverage report
 # Single test file:
@@ -51,25 +51,26 @@ pnpm audio:capture          # Instructions for capturing audio in dev tools
 
 ## Architecture
 
-### Modular Engine (New)
+### Modular Engine
 
-The engine was refactored from a monolithic `GameEngine.ts` into discrete modules under `src/game/engine/`:
+The game engine lives in `src/game/engine/` as a set of discrete, composable modules:
 
 ```
 React UI (screens/, components/)
     |  useGameEngine hook
     v
-Game.ts (modular orchestrator, ~685 lines)
+Game.ts (modular orchestrator, ~929 lines)
     |  delegates to
     v
 Systems (pure functions)           Managers (stateful)
-  CollisionSystem.ts                 EntityManager.ts
-  WobblePhysics.ts                   GameStateManager.ts
-  ScoreSystem.ts
-  SpawnSystem.ts                   Entities (data)
-  MovementSystem.ts                  Entity.ts (base)
-  BushSystem.ts                      Animal.ts (with variants)
-                                     Player.ts (farmer)
+  AbilitySystem.ts                   EntityManager.ts
+  CollisionSystem.ts                 GameStateManager.ts
+  WobblePhysics.ts
+  ScoreSystem.ts                   Entities (data)
+  SpawnSystem.ts                     Entity.ts (base)
+  MovementSystem.ts                  Animal.ts (with variants + abilities)
+  BushSystem.ts                      Player.ts (farmer)
+
 Core
   GameLoop.ts (rAF, fixed timestep)
   ResponsiveScale.ts (iPhone SE = 1.0 reference)
@@ -82,9 +83,9 @@ Rendering
 Renderers (src/game/renderer/)
   animals.ts      background.ts
   tornado.ts      bush.ts
-  farmer.ts       psyduck.ts (legacy)
+  farmer.ts
 
-AI (YUKA goal-driven, src/game/engine/ai/)
+AI (YUKA goal-driven, src/game/ai/)
   GameDirector.ts       (spawn orchestration, difficulty, player modeling)
   WobbleGovernor.ts     (stack wobble control: steady/pulse/mercy/chaos)
   DuckBehavior.ts       (7 steering behaviors: seeker, evader, zigzag, etc.)
@@ -93,15 +94,9 @@ Input
   InputManager.ts (unified mouse/touch with frame-rate-independent drag)
 ```
 
-### Legacy Engine
-
-`GameEngine.ts` (~1935 lines) is still present and currently wired into the game via the `useGameEngine` hook. It runs the live game. The new `Game.ts` is built, compiles, and passes tests but has not yet replaced `GameEngine.ts` in the live game loop. Both are exported from `src/game/engine/index.ts`.
-
-**Next step:** Wire `Game.ts` into `useGameEngine`, test end-to-end, then remove `GameEngine.ts`.
-
 ### Rendering
 
-All graphics are **procedurally drawn on Canvas 2D** -- there are no sprite sheets. Each entity type has a dedicated renderer module in `src/game/renderer/`. The farm renderers (animals, tornado, farmer, bush, background) are complete.
+All graphics are **procedurally drawn on Canvas 2D** -- there are no sprite sheets. Each entity type has a dedicated renderer module in `src/game/renderer/`. The farm renderers (animals, tornado, farmer, bush, background) are the active renderers.
 
 ### State Management
 
@@ -164,12 +159,13 @@ import { feedback, haptics, storage, platform, platformAudio } from "@/platform"
 | File | Purpose |
 |------|---------|
 | `src/game/config.ts` | All game constants, colors, physics values, animal types |
-| `src/game/engine/Game.ts` | New modular game orchestrator |
-| `src/game/engine/GameEngine.ts` | Legacy monolithic engine (still live) |
-| `src/game/engine/index.ts` | Engine barrel exports (both old and new) |
-| `src/game/ecs/archetypes.ts` | 9 animal archetype definitions (rendering) |
+| `src/game/engine/Game.ts` | Modular game orchestrator (~929 lines) |
+| `src/game/engine/index.ts` | Engine barrel exports |
+| `src/game/engine/systems/AbilitySystem.ts` | 9 animal special abilities |
+| `src/game/engine/systems/SpawnSystem.ts` | Animal spawn templates (AnimalSpawnTemplate) |
+| `src/game/engine/entities/Animal.ts` | Animal entity with 9 types and variants |
+| `src/game/ecs/archetypes.ts` | Animal archetype definitions (rendering colors) |
 | `src/game/ecs/types.ts` | ECS component and entity type definitions |
-| `src/game/engine/systems/SpawnSystem.ts` | Animal archetypes (game logic stats) |
 | `src/game/hooks/useGameEngine.ts` | React-to-engine bridge |
 | `src/game/screens/GameScreen.tsx` | Main game screen (canvas + UI) |
 | `src/game/GAME_DOCS.md` | Game mechanics documentation |

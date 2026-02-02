@@ -23,16 +23,16 @@ export { HeartsDisplay } from "./components/HeartsDisplay";
 export { ModeSelect } from "./components/ModeSelect";
 export { PauseButton } from "./components/PauseButton";
 export { PauseMenu } from "./components/PauseMenu";
-export { PeekingPsyduck } from "./components/PeekingPsyduck";
+export { PeekingAnimal } from "./components/PeekingAnimal";
 export { PerfectIndicator } from "./components/PerfectIndicator";
-export { PokeballButton } from "./components/PokeballButton";
+export { BankButton } from "./components/BankButton";
 export { ScoreDisplay } from "./components/ScoreDisplay";
 export { SoundToggle } from "./components/SoundToggle";
 export { hasCompletedTutorial, resetTutorial, Tutorial } from "./components/Tutorial";
 export { UpgradeShop } from "./components/UpgradeShop";
-export type { DuckType as ConfigDuckType, GameMode, PowerUpType } from "./config";
+export type { AnimalTypeConfig as ConfigAnimalTypeConfig, GameMode, PowerUpType } from "./config";
 // Config
-export { DUCK_TYPES, FAIL_MESSAGES, GAME_CONFIG, GAME_INFO, POWER_UPS } from "./config";
+export { ANIMAL_TYPE_CONFIGS, FAIL_MESSAGES, GAME_CONFIG, GAME_INFO, POWER_UPS } from "./config";
 export type { EffectType, ParticleConfig, ParticleType } from "./effects/ParticleEffects";
 // Particle Effects
 export { ParticleSystem, particleSystem } from "./effects/ParticleEffects";

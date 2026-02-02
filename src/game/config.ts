@@ -476,7 +476,7 @@ export const GAME_CONFIG = {
     speedIncreasePerLevel: 0.04,
     spawnRateCurve: 0.85,
     specialVariantLevelBonus: 0.02,
-    specialDuckLevelBonus: 0.01, // Legacy compat
+    specialAnimalLevelBonus: 0.01,
   },
 
   // Layout
@@ -562,10 +562,10 @@ export const GAME_CONFIG = {
   },
 } as const;
 
-// Legacy duck types for backward compatibility
-export type DuckType = 'normal' | 'fire' | 'ice';
+// Animal type config for variant types
+export type AnimalTypeConfig = 'normal' | 'fire' | 'ice';
 
-export const DUCK_TYPES = {
+export const ANIMAL_TYPE_CONFIGS = {
   normal: {
     spawnWeight: 0.85,
     ability: null,

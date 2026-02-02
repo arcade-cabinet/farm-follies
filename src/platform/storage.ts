@@ -95,14 +95,14 @@ export const storage = new StorageManager();
 
 // Storage keys used throughout the app
 export const STORAGE_KEYS = {
-  HIGH_SCORE: "psyduck_high_score",
-  ACHIEVEMENTS: "psyduck_achievements",
-  STATS: "psyduck_stats",
-  UPGRADES: "psyduck_upgrades",
-  COINS: "psyduck_coins",
-  UNLOCKED_MODES: "psyduck_unlocked_modes",
-  TUTORIAL_COMPLETED: "psyduck_tutorial_completed",
-  SOUND_MUTED: "psyduck_sound_muted",
-  SETTINGS: "psyduck_settings",
+  HIGH_SCORE: "farm-follies-high-score",
+  ACHIEVEMENTS: "farm-follies-achievements",
+  STATS: "farm-follies-stats",
+  UPGRADES: "farm-follies-upgrades",
+  COINS: "farm-follies-coins",
+  UNLOCKED_MODES: "farm-follies-unlocked-modes",
+  TUTORIAL_COMPLETED: "farm-follies-tutorial-completed",
+  SOUND_MUTED: "farm-follies-sound-muted",
+  SETTINGS: "farm-follies-settings",
   VOICE_GENDER: "farm-follies-voice-gender",
 } as const;

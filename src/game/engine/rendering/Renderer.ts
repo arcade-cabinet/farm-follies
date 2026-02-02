@@ -10,13 +10,17 @@ import { GameStateManager } from '../managers/GameStateManager';
 import type { ScaleFactors } from '../core/ResponsiveScale';
 import type { PlayerEntity } from '../entities/Player';
 import type { AnimalEntity } from '../entities/Animal';
+import type { PowerUpEntity } from '../entities/PowerUp';
+import { getPowerUpBobOffset } from '../entities/PowerUp';
 
 // Import actual renderer functions
 import { drawBackground } from '../../renderer/background';
 import { drawAnimal } from '../../renderer/animals';
 import { drawFarmerBase } from '../../renderer/farmer';
 import { drawTornado, drawTornadoRail, type TornadoState } from '../../renderer/tornado';
+import { drawBush } from '../../renderer/bush';
 import { GAME_CONFIG } from '../../config';
+import type { BushState } from '../state/GameState';
 import { createAnimalArchetype } from '../../ecs/archetypes';
 
 const { layout } = GAME_CONFIG;
@@ -48,22 +52,25 @@ export class Renderer {
     entities: EntityManager,
     state: GameStateManager,
     tornado: TornadoState,
-    isInvincible: boolean
+    isInvincible: boolean,
+    bushes: BushState[] = []
   ): void {
     const { ctx, width, height, scale } = this.renderCtx;
-    
+
     // Begin frame
     this.renderCtx.beginFrame();
-    
+
     // Update background rotation
     this.bgRotation += 0.001 + state.level * 0.0001;
-    
+
     // Draw layers in order
     this.drawBackground();
     this.drawBankZone(state);
     this.drawFloorZone();
+    this.drawBushes(bushes);
     this.drawTornado(tornado);
     this.drawEntities(entities, state, isInvincible);
+    this.drawPowerUps(entities);
     this.drawDangerOverlay(state);
     
     // Debug overlay
@@ -147,6 +154,24 @@ export class Renderer {
     
     ctx.fillStyle = 'rgba(255, 193, 7, 0.05)';
     ctx.fillRect(0, floorY + scale.entityHeight / 2, width - scale.bankWidth, height);
+  }
+
+  private drawBushes(bushes: BushState[]): void {
+    const { ctx } = this.renderCtx;
+
+    for (const bush of bushes) {
+      if (!bush.active) continue;
+
+      const currentHeight = bush.height * bush.scale;
+      drawBush(ctx, bush.x + bush.width / 2, bush.y, {
+        width: bush.width,
+        height: currentHeight,
+        maxHeight: bush.height,
+        growth: bush.growthStage,
+        bouncePhase: bush.rotation,
+        age: 0,
+      });
+    }
   }
 
   private drawTornado(tornado: TornadoState): void {
@@ -242,6 +267,70 @@ export class Renderer {
     );
     
     ctx.restore();
+  }
+
+  private drawPowerUps(entities: EntityManager): void {
+    const { ctx } = this.renderCtx;
+    const powerUps = entities.getByType<PowerUpEntity>('powerup');
+
+    for (const powerUp of powerUps) {
+      const { position } = powerUp.transform;
+      const size = powerUp.bounds?.width ?? 40;
+      const cx = position.x + size / 2;
+      const cy = position.y + size / 2 + getPowerUpBobOffset(powerUp);
+      const { glowColor, name } = powerUp.powerup;
+
+      ctx.save();
+
+      // Glow
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 15;
+
+      // Outer circle
+      ctx.fillStyle = glowColor;
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath();
+      ctx.arc(cx, cy, size / 2 + 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner circle
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = glowColor;
+      ctx.beginPath();
+      ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // White highlight
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#FFF';
+      ctx.beginPath();
+      ctx.arc(cx - size * 0.15, cy - size * 0.15, size * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Icon text (first letter of name)
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#FFF';
+      ctx.font = `bold ${size * 0.5}px 'Fredoka One', cursive`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const icon = this.getPowerUpIcon(powerUp.powerup.powerUpType);
+      ctx.fillText(icon, cx, cy);
+
+      ctx.restore();
+    }
+  }
+
+  private getPowerUpIcon(type: string): string {
+    switch (type) {
+      case 'hay_bale': return '+';
+      case 'golden_egg': return '2x';
+      case 'water_trough': return 'M';
+      case 'salt_lick': return 'F';
+      case 'corn_feed': return 'B';
+      case 'lucky_horseshoe': return 'U';
+      default: return '?';
+    }
   }
 
   private drawDangerOverlay(state: GameStateManager): void {

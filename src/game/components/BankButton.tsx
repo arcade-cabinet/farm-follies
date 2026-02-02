@@ -1,6 +1,6 @@
 /**
- * Pokeball Button Component
- * Animated pokeball button for banking ducks
+ * Bank Button Component
+ * Animated button for banking animals
  */
 
 import { animate } from "animejs";
@@ -8,20 +8,20 @@ import { useEffect, useRef } from "react";
 import { GAME_CONFIG } from "../config";
 import { useResponsiveScale } from "../hooks/useResponsiveScale";
 
-interface PokeballButtonProps {
+interface BankButtonProps {
   visible: boolean;
   stackCount: number;
   onClick: () => void;
 }
 
-export function PokeballButton({ visible, stackCount, onClick }: PokeballButtonProps) {
+export function BankButton({ visible, stackCount, onClick }: BankButtonProps) {
   const { game, isMobile } = useResponsiveScale();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const size = Math.round((isMobile ? 60 : 80) * game);
 
-  // Draw pokeball
+  // Draw bank button
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -147,7 +147,7 @@ export function PokeballButton({ visible, stackCount, onClick }: PokeballButtonP
         padding: 0,
         opacity: 0,
       }}
-      aria-label={`Bank ${stackCount} ducks`}
+      aria-label={`Bank ${stackCount} animals`}
     >
       <canvas
         ref={canvasRef}

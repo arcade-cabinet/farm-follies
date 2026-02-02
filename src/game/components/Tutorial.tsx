@@ -25,11 +25,11 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     title: "DRAG TO CATCH",
     description: "Drag the farmer left and right to catch falling animals!",
     icon: "👆",
-    highlight: "Your duck is at the bottom",
+    highlight: "Your farmer is at the bottom",
   },
   {
     title: "BUILD YOUR STACK",
-    description: "Catch ducks to stack them up. Higher stacks = more points!",
+    description: "Catch animals to stack them up. Higher stacks = more points!",
     icon: "📚",
   },
   {
@@ -39,22 +39,22 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     highlight: "Move smoothly",
   },
   {
-    title: "SPECIAL DUCKS",
+    title: "SPECIAL ANIMALS",
     description:
-      "🔥 Fire ducks - TAP to shoot fireballs!\n❄️ Ice ducks - TAP to freeze falling ducks!\nAbilities have cooldowns - watch for the glow!",
+      "🔥 Fire animals - TAP to shoot fireballs!\n❄️ Ice animals - TAP to freeze falling animals!\nAbilities have cooldowns - watch for the glow!",
     icon: "✨",
-    highlight: "Tap special ducks to activate powers",
+    highlight: "Tap special animals to activate powers",
   },
   {
-    title: "BANK YOUR DUCKS",
-    description: "Stack 5+ ducks and a Pokeball appears. Tap it to bank your ducks safely!",
+    title: "BANK YOUR ANIMALS",
+    description: "Stack 5+ animals and a bank button appears. Tap it to bank your animals safely!",
     icon: "🔴",
     highlight: "Banking saves progress",
   },
   {
     title: "COLLECT POWER-UPS",
     description:
-      "🍬 Rare Candy merges your stack\n💜 Potion heals hearts\n💚 HP Up adds max health",
+      "🌽 Corn Feed merges your stack\n🌾 Hay Bale heals hearts\n🍀 Lucky Horseshoe adds max health",
     icon: "🎁",
   },
 ];
@@ -95,7 +95,7 @@ export function Tutorial({ onComplete }: TutorialProps) {
   const handleNext = () => {
     if (isLastStep) {
       // Mark tutorial as complete
-      localStorage.setItem("psyduck-tutorial-complete", "true");
+      localStorage.setItem("farm-follies-tutorial-complete", "true");
       onComplete();
     } else {
       setCurrentStep((prev) => prev + 1);
@@ -103,7 +103,7 @@ export function Tutorial({ onComplete }: TutorialProps) {
   };
 
   const handleSkip = () => {
-    localStorage.setItem("psyduck-tutorial-complete", "true");
+    localStorage.setItem("farm-follies-tutorial-complete", "true");
     onComplete();
   };
 
@@ -206,7 +206,7 @@ export function Tutorial({ onComplete }: TutorialProps) {
  */
 export function hasCompletedTutorial(): boolean {
   if (typeof window === "undefined") return false;
-  return localStorage.getItem("psyduck-tutorial-complete") === "true";
+  return localStorage.getItem("farm-follies-tutorial-complete") === "true";
 }
 
 /**
@@ -214,6 +214,6 @@ export function hasCompletedTutorial(): boolean {
  */
 export function resetTutorial(): void {
   if (typeof window !== "undefined") {
-    localStorage.removeItem("psyduck-tutorial-complete");
+    localStorage.removeItem("farm-follies-tutorial-complete");
   }
 }

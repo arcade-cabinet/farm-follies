@@ -1,17 +1,17 @@
 /**
- * Peeking Psyduck Component
- * An animated Psyduck that peeks out from the sides of the screen
+ * Peeking Animal Component
+ * An animated animal that peeks out from the sides of the screen
  */
 
 import { animate } from "animejs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GAME_CONFIG } from "../config";
 
-interface PeekingPsyduckProps {
+interface PeekingAnimalProps {
   scale?: number;
 }
 
-export function PeekingPsyduck({ scale = 1 }: PeekingPsyduckProps) {
+export function PeekingAnimal({ scale = 1 }: PeekingAnimalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [side, setSide] = useState<"left" | "right">("left");
@@ -23,8 +23,8 @@ export function PeekingPsyduck({ scale = 1 }: PeekingPsyduckProps) {
   const baseWidth = 120 * scale;
   const baseHeight = 140 * scale;
 
-  // Draw the peeking Psyduck
-  const drawPsyduck = useCallback(
+  // Draw the peeking animal
+  const drawPeekingAnimal = useCallback(
     (ctx: CanvasRenderingContext2D, blinking: boolean) => {
       const w = baseWidth;
       const h = baseHeight;
@@ -165,8 +165,8 @@ export function PeekingPsyduck({ scale = 1 }: PeekingPsyduckProps) {
     canvas.width = baseWidth * 2;
     canvas.height = baseHeight * 2;
 
-    drawPsyduck(ctx, isBlinking);
-  }, [drawPsyduck, isBlinking, baseWidth, baseHeight]);
+    drawPeekingAnimal(ctx, isBlinking);
+  }, [drawPeekingAnimal, isBlinking, baseWidth, baseHeight]);
 
   // Random blinking
   useEffect(() => {

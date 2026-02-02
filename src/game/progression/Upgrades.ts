@@ -103,17 +103,17 @@ const UPGRADES_DATA: Omit<Upgrade, "currentLevel">[] = [
   {
     id: "special_affinity",
     name: "Special Affinity",
-    description: "More special ducks spawn",
+    description: "More special animals spawn",
     icon: "✨",
     maxLevel: 3,
     baseCost: 550,
     costMultiplier: 2,
     effect: (level) => level * 0.05, // +5% per level
-    effectDescription: (level) => `+${level * 5}% special ducks`,
+    effectDescription: (level) => `+${level * 5}% special animals`,
   },
 ];
 
-const STORAGE_KEY = "psyduck-upgrades";
+const STORAGE_KEY = "farm-follies-upgrades";
 
 /**
  * Get default upgrade state
@@ -258,7 +258,7 @@ export function getUpgradeModifiers(): {
   comboDecayMultiplier: number;
   abilityCooldownReduction: number;
   powerUpSpawnBonus: number;
-  specialDuckBonus: number;
+  specialAnimalBonus: number;
 } {
   const state = loadUpgradeState();
 
@@ -275,6 +275,6 @@ export function getUpgradeModifiers(): {
     comboDecayMultiplier: getValue("combo_keeper"),
     abilityCooldownReduction: getValue("ability_master"),
     powerUpSpawnBonus: getValue("lucky_drops"),
-    specialDuckBonus: getValue("special_affinity"),
+    specialAnimalBonus: getValue("special_affinity"),
   };
 }

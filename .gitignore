@@ -44,3 +44,4 @@ vite.config.d.ts
 # Large binary assets (use LFS or CDN)
 public/assets/audio/
 public/assets/video/
+.vite/

@@ -81,6 +81,12 @@ export {
   updateStress,
 } from './entities/Player';
 export type { PlayerEntity, PlayerComponents } from './entities/Player';
+export {
+  createPowerUp,
+  updatePowerUpBob,
+  getPowerUpBobOffset,
+} from './entities/PowerUp';
+export type { PowerUpEntity, PowerUpComponents } from './entities/PowerUp';
 
 // Managers
 export * from './managers';
@@ -107,6 +113,7 @@ export * from './systems/ScoreSystem';
 export * from './systems/SpawnSystem';
 export * from './systems/MovementSystem';
 export * from './systems/BushSystem';
+export { getAbilityIndicators, type AbilityIndicator as AbilityIndicatorData } from './systems/AbilitySystem';
 
 // Rendering
 export * from './rendering';

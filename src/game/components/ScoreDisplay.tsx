@@ -13,7 +13,7 @@ interface ScoreDisplayProps {
   combo: number;
   level: number;
   stackHeight: number;
-  bankedDucks: number;
+  bankedAnimals: number;
   highScore: number;
   lives: number;
   maxLives: number;
@@ -26,7 +26,7 @@ export function ScoreDisplay({
   combo,
   level,
   stackHeight,
-  bankedDucks,
+  bankedAnimals,
   highScore,
   lives,
   maxLives,
@@ -101,7 +101,7 @@ export function ScoreDisplay({
             <span>LVL {level}</span>
             <span style={{ color: FARM_COLORS.ground.hay }}>|</span>
             <span>
-              <span style={{ color: FARM_COLORS.nature.corn }}>🌾</span> {bankedDucks}
+              <span style={{ color: FARM_COLORS.nature.corn }}>🌾</span> {bankedAnimals}
             </span>
           </div>
         </div>

@@ -15,7 +15,7 @@ export function SoundToggle({ className = "" }: SoundToggleProps) {
   const [isMuted, setIsMuted] = useState(() => {
     // Check localStorage for saved preference
     if (typeof window !== "undefined") {
-      return localStorage.getItem("psyduck-muted") === "true";
+      return localStorage.getItem("farm-follies-muted") === "true";
     }
     return false;
   });
@@ -23,7 +23,7 @@ export function SoundToggle({ className = "" }: SoundToggleProps) {
   // Apply mute state on mount and changes
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("psyduck-muted", String(isMuted));
+      localStorage.setItem("farm-follies-muted", String(isMuted));
     }
     // Sync with audio manager
     audioManager.setMuted(isMuted);

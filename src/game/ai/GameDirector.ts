@@ -2,10 +2,10 @@
  * YUKA-powered Game Director
  *
  * An intelligent AI that orchestrates the entire game experience:
- * - Where to spawn ducks (strategic positioning)
- * - When to spawn ducks (pacing and rhythm)
- * - What type of ducks to spawn (difficulty curve)
- * - Duck AI behaviors and momentum
+ * - Where to spawn animals (strategic positioning)
+ * - When to spawn animals (pacing and rhythm)
+ * - What type of animals to spawn (difficulty curve)
+ * - Animal AI behaviors and momentum
  * - Power-up timing and placement
  * - Dynamic difficulty adjustment based on player performance
  *
@@ -14,7 +14,7 @@
  */
 
 import { GameEntity, GoalEvaluator, Think } from "yuka";
-import type { DuckType, PowerUpType } from "../config";
+import type { AnimalTypeConfig, PowerUpType } from "../config";
 import type { DuckBehaviorType } from "./DuckBehavior";
 
 /**
@@ -23,7 +23,7 @@ import type { DuckBehaviorType } from "./DuckBehavior";
 export interface SpawnDecision {
   shouldSpawn: boolean;
   x: number;
-  duckType: DuckType;
+  animalType: AnimalTypeConfig;
   behaviorType: DuckBehaviorType;
   initialVelocityX: number;
   initialVelocityY: number;
@@ -67,14 +67,14 @@ export interface GameState {
   catchRate: number; // 0-1
 
   // Field state
-  activeDucks: number;
+  activeAnimals: number;
   activePowerUps: number;
   screenWidth: number;
   screenHeight: number;
 
   // Current level/difficulty
   level: number;
-  bankedDucks: number;
+  bankedAnimals: number;
 }
 
 /**
@@ -259,14 +259,14 @@ export class GameDirector extends GameEntity {
   }
 
   /**
-   * Decide whether and where to spawn a duck
+   * Decide whether and where to spawn an animal
    */
   decideSpawn(): SpawnDecision {
     if (!this.gameState) {
       return {
         shouldSpawn: false,
         x: 0,
-        duckType: "normal",
+        animalType: "normal",
         behaviorType: "normal",
         initialVelocityX: 0,
         initialVelocityY: 0,
@@ -281,7 +281,7 @@ export class GameDirector extends GameEntity {
       return {
         shouldSpawn: false,
         x: 0,
-        duckType: "normal",
+        animalType: "normal",
         behaviorType: "normal",
         initialVelocityX: 0,
         initialVelocityY: 0,
@@ -294,7 +294,7 @@ export class GameDirector extends GameEntity {
       return {
         shouldSpawn: false,
         x: 0,
-        duckType: "normal",
+        animalType: "normal",
         behaviorType: "normal",
         initialVelocityX: 0,
         initialVelocityY: 0,
@@ -306,7 +306,7 @@ export class GameDirector extends GameEntity {
     const spawnX = this.calculateSpawnX(state);
 
     // Determine duck type based on difficulty
-    const duckType = this.chooseDuckType();
+    const animalType = this.chooseAnimalType();
 
     // Determine AI behavior
     const behaviorType = this.chooseBehaviorType();
@@ -320,7 +320,7 @@ export class GameDirector extends GameEntity {
     return {
       shouldSpawn: true,
       x: spawnX,
-      duckType,
+      animalType,
       behaviorType,
       initialVelocityX: vx,
       initialVelocityY: vy,
@@ -412,20 +412,20 @@ export class GameDirector extends GameEntity {
   }
 
   /**
-   * Choose duck type based on difficulty and strategy
+   * Choose animal type config based on difficulty and strategy
    */
-  private chooseDuckType(): DuckType {
+  private chooseAnimalType(): AnimalTypeConfig {
     // Base probabilities
     let fireChance = 0.1 + this.difficulty * 0.15;
     let iceChance = 0.1 + this.difficulty * 0.1;
 
-    // Mercy mode: fewer special ducks
+    // Mercy mode: fewer special animals
     if (this.mercyModeActive) {
       fireChance *= 0.5;
       iceChance *= 0.5;
     }
 
-    // Challenge mode: more special ducks
+    // Challenge mode: more special animals
     if (this.activeGoal === "challenge") {
       fireChance *= 1.5;
       iceChance *= 1.3;
@@ -482,7 +482,7 @@ export class GameDirector extends GameEntity {
   }
 
   /**
-   * Calculate initial velocity to give ducks momentum
+   * Calculate initial velocity to give animals momentum
    */
   private calculateInitialVelocity(spawnX: number, state: GameState): { vx: number; vy: number } {
     let vx = 0;
@@ -500,13 +500,13 @@ export class GameDirector extends GameEntity {
     // Vertical speed increases with difficulty
     vy = 2 + this.difficulty * 2;
 
-    // Challenge mode: faster ducks
+    // Challenge mode: faster animals
     if (this.activeGoal === "challenge") {
       vy *= 1.2;
       vx *= 1.3;
     }
 
-    // Mercy mode: slower ducks
+    // Mercy mode: slower animals
     if (this.mercyModeActive) {
       vy *= 0.7;
       vx *= 0.6;
@@ -516,7 +516,7 @@ export class GameDirector extends GameEntity {
   }
 
   /**
-   * Calculate how much ducks should aim at player
+   * Calculate how much animals should aim at player
    */
   private calculateTargetBias(): number {
     let bias = 0.2 + this.difficulty * 0.4;
@@ -600,8 +600,8 @@ export class GameDirector extends GameEntity {
       return "rare_candy";
     }
 
-    // Great ball when many ducks falling
-    if (state.activeDucks > 2 && Math.random() < 0.25) {
+    // Great ball when many animals falling
+    if (state.activeAnimals > 2 && Math.random() < 0.25) {
       return "great_ball";
     }
 
@@ -690,7 +690,7 @@ class ReleaseTensionEvaluator extends GoalEvaluator<GameDirector> {
     // Release after high stress or after big stack
     const stressFactor = owner.playerFrustration * 0.4;
     const recentIntensity = owner.intensity > 0.7 ? 0.3 : 0;
-    const postBank = owner.gameState.stackHeight === 0 && owner.gameState.bankedDucks > 0 ? 0.3 : 0;
+    const postBank = owner.gameState.stackHeight === 0 && owner.gameState.bankedAnimals > 0 ? 0.3 : 0;
 
     return stressFactor + recentIntensity + postBank;
   }

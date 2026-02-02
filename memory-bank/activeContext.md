@@ -1,101 +1,114 @@
 # Active Context: Farm Follies
 
 ## Current Focus
-**Modular Engine Refactor** - Breaking the monolithic GameEngine.ts into clean, testable modules.
+**Post-Refactor Cleanup and Feature Completion** - The modular engine is live and all legacy code has been deleted. Focus is on theme cleanup, power-up spawning, and polish.
 
-## Recent Changes (This Session)
+## Recent Changes
 
-### Created New Modular Architecture
+### Legacy Code Deletion
+All legacy files have been removed:
+- `src/game/engine/GameEngine.ts` (1935-line monolith) -- DELETED
+- `src/game/entities/Duck.ts`, `BossDuck.ts`, `Fireball.ts`, `FrozenDuck.ts`, `Particle.ts`, `PowerUp.ts` -- DELETED
+- `src/game/renderer/psyduck.ts` -- DELETED
+- `src/game/state/` directory -- DELETED (state types now live in `src/game/engine/state/`)
+- `src/game/physics/` directory -- DELETED (wobble physics now in `src/game/engine/systems/WobblePhysics.ts`)
+
+### Type Unification
+- `AnimalType` unified across codebase: 9 types are `chicken`, `duck`, `pig`, `goat`, `sheep`, `cow`, `goose`, `horse`, `rooster`
+- Previous `turkey` and `donkey` types replaced by `goose` and `rooster`
+- `SpawnSystem.AnimalArchetype` renamed to `AnimalSpawnTemplate` to avoid conflict with ECS `AnimalArchetype`
+
+### AbilitySystem Fully Integrated
+- `AbilitySystem.ts` added to `src/game/engine/systems/`
+- All 9 animal abilities implemented as pure functions
+- Integrated into `Game.ts` game loop (activation, effect updates, cooldowns)
+
+### Modular Engine Is Production
+- `Game.ts` (~929 lines) is the active game loop, wired into `useGameEngine` hook
+- No dual-engine exports -- only the modular engine exists now
+- Production build: 844 KB
+- 328 unit tests passing across 14 test files
+
+## Current Architecture
 ```
 src/game/engine/
-├── core/
-│   ├── GameLoop.ts        # Frame-rate independent game loop
-│   └── ResponsiveScale.ts # Screen scaling utilities
-├── input/
-│   └── InputManager.ts    # Unified mouse/touch handling
-├── entities/
-│   ├── Entity.ts          # Base entity with transform/velocity
-│   ├── Animal.ts          # Animal entity with variants
-│   └── Player.ts          # Player (farmer) entity
-├── managers/
-│   ├── EntityManager.ts   # Entity storage and querying
-│   └── GameStateManager.ts # Score, lives, progression
-├── rendering/
-│   ├── RenderContext.ts   # Canvas wrapper with effects
-│   └── Renderer.ts        # Main rendering orchestrator
-├── systems/               # (Created in previous session)
-│   ├── CollisionSystem.ts
-│   ├── WobblePhysics.ts
-│   ├── ScoreSystem.ts
-│   ├── SpawnSystem.ts
-│   ├── MovementSystem.ts
-│   └── BushSystem.ts
-└── Game.ts                # New modular game class
+  Game.ts                # Modular orchestrator (~929 lines)
+  core/
+    GameLoop.ts          # Frame-rate independent game loop
+    ResponsiveScale.ts   # Screen scaling utilities
+  input/
+    InputManager.ts      # Unified mouse/touch handling
+  entities/
+    Entity.ts            # Base entity with transform/velocity
+    Animal.ts            # Animal entity with variants and abilities
+    Player.ts            # Player (farmer) entity
+  managers/
+    EntityManager.ts     # Entity storage and querying
+    GameStateManager.ts  # Score, lives, progression
+  systems/
+    AbilitySystem.ts     # 9 animal special abilities (pure functions)
+    CollisionSystem.ts   # Catch detection, AABB/circle checks
+    WobblePhysics.ts     # Stack wobble simulation
+    ScoreSystem.ts       # Points, combos, multipliers
+    SpawnSystem.ts       # Animal spawn templates and logic
+    MovementSystem.ts    # Entity movement and gravity
+    BushSystem.ts        # Bush growth and bounce mechanics
+  rendering/
+    RenderContext.ts     # Canvas wrapper with effects
+    Renderer.ts          # Main rendering orchestrator
+  state/
+    GameState.ts         # Immutable state type definitions
+    GameEvents.ts        # Event system types
 ```
-
-### Created Unit Tests
-- GameLoop.test.ts - Game loop lifecycle tests
-- EntityManager.test.ts - Entity management tests
-- InputManager.test.ts - Input handling tests
-- (Previous) CollisionSystem.test.ts, ScoreSystem.test.ts, WobblePhysics.test.ts
-
-### Total: 81 tests passing
 
 ## Current Blockers
 
-**None** - All TypeScript errors have been fixed:
-- Fixed type exports in index.ts (use `export type` for type-only exports)
-- Fixed Renderer.ts archetype creation (pass boolean not string)
+**None** -- All systems are integrated and tests are passing.
 
 ## Next Steps
 
-### Immediate (Next Session)
-1. Wire up Game.ts to replace GameEngine.ts in useGameEngine hook
-2. Test gameplay end-to-end with new engine
-3. Remove legacy GameEngine.ts once verified
+### Immediate
+1. Power-up spawning -- power-ups are not yet spawned in `Game.ts` (spawn logic exists in `SpawnSystem` but not wired)
+2. Theme rename -- remaining "Psyduck" / "Duck" references in UI strings and variable names
+3. Ability UI indicators -- visual feedback when abilities are ready/active on stacked animals
 
-### Short-Term (Complete Refactor)
-1. Wire up Game.ts to replace GameEngine.ts
-2. Update useGameEngine hook to use new Game class
-3. Test gameplay end-to-end
-4. Remove legacy GameEngine.ts
+### Short-Term
+4. E2E tests via Playwright (currently 0 E2E tests)
+5. Animal-specific sounds (moo, cluck, oink, etc.)
+6. Tutorial updates for new ability mechanics
 
-### Medium-Term (Features)
-1. Implement animal special abilities
-2. Add bush bounce gameplay
-3. Render farmer instead of duck as base
-4. Add animal-specific sounds
+### Medium-Term
+7. Boss mode animals
+8. Achievement system updates
+9. Seasonal variants
+10. Performance optimizations
 
 ## Important Patterns Learned
 
-### Type System Conflicts
-- ECS types (src/game/ecs/types.ts) define AnimalArchetype differently than SpawnSystem
-- Need to use ECS archetypes for rendering, SpawnSystem for game logic
-- Use `createAnimalArchetype()` from ecs/archetypes.ts for rendering
+### Type System Resolution
+- ECS `AnimalArchetype` (from `ecs/archetypes.ts`) is used for rendering (has colors)
+- `AnimalSpawnTemplate` (from `SpawnSystem.ts`) is used for game logic (has stats)
+- `AnimalType` is unified: same 9-type union used everywhere
 
 ### Entity Architecture
-- New Entity system uses composition: base Entity + typed components
-- Animal has `AnimalComponents`, Player has `PlayerComponents`
-- Different from legacy Duck class which uses inheritance
+- New Entity system uses composition: base `Entity` + typed components
+- `Animal` has `AnimalComponents`, `Player` has `PlayerComponents`
+- All legacy inheritance-based entities (Duck, BossDuck, etc.) are deleted
 
-### Wobble Physics
-- Stack wobble needs to work with AnimalEntity[], not legacy AnimalState[]
-- Custom updateWobble() method added to Game.ts to bridge types
-- Wobble state stored in Map<string, AnimalWobbleState> by entity ID
+### AbilitySystem Pattern
+- Pure-function system like all other systems
+- State tracked in `AbilitySystemState` (active effects, cooldowns, zones)
+- `Game.ts` calls `activateAbility()` on tap, `updateAbilityEffects()` each frame
+- Passive abilities (feather_float) checked during movement updates
 
 ## Active Decisions
 
-### Keep Legacy GameEngine.ts
-- Don't delete yet - game still works with it
-- Export both from index.ts for gradual migration
-- Once Game.ts works, deprecate GameEngine.ts
+### Single Engine
+- Legacy `GameEngine.ts` is deleted; only `Game.ts` exists
+- `useGameEngine` hook imports directly from `Game.ts`
+- No backward compatibility layer needed
 
 ### Renderer Uses ECS Archetypes
-- createAnimalArchetype() for rendering (has colors)
-- ANIMAL_ARCHETYPES from SpawnSystem for game logic (has stats)
-- Two different type systems, need to keep separate
-
-## Questions to Resolve
-1. Should we unify the two AnimalArchetype types?
-2. Should the new Game.ts use the legacy AI systems?
-3. How to handle backward compatibility during transition?
+- `createAnimalArchetype()` for rendering (has colors from `FARM_COLORS`)
+- `ANIMAL_ARCHETYPES` map (of `AnimalSpawnTemplate`) for game logic (has stats)
+- Two complementary type systems, clearly separated by purpose

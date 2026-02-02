@@ -2,34 +2,36 @@
 
 ## Architecture Overview
 
-### Current State: Hybrid Architecture
-The game is transitioning from a monolithic architecture to a modular one:
+### Modular Engine Architecture
+The game uses a clean modular architecture with clear separation of concerns:
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    React App                         │
-├─────────────────────────────────────────────────────┤
-│  GameScreen.tsx                                      │
-│    └── Canvas + useGameEngine hook                   │
-├─────────────────────────────────────────────────────┤
-│  Game Engine (BEING REFACTORED)                      │
-│    ├── GameEngine.ts (legacy monolith)               │
-│    └── Game.ts (new modular)                         │
-├─────────────────────────────────────────────────────┤
-│  Systems (Pure Functions)                            │
-│    ├── CollisionSystem                               │
-│    ├── WobblePhysics                                 │
-│    ├── ScoreSystem                                   │
-│    ├── SpawnSystem                                   │
-│    ├── MovementSystem                                │
-│    └── BushSystem                                    │
-├─────────────────────────────────────────────────────┤
-│  Renderers (Canvas Drawing)                          │
-│    ├── animals.ts                                    │
-│    ├── tornado.ts                                    │
-│    ├── farmer.ts                                     │
-│    └── background.ts                                 │
-└─────────────────────────────────────────────────────┘
++-----------------------------------------------------+
+|                    React App                         |
++-----------------------------------------------------+
+|  GameScreen.tsx                                      |
+|    +-- Canvas + useGameEngine hook                   |
++-----------------------------------------------------+
+|  Game.ts (~929 lines, modular orchestrator)          |
+|    Composes systems, managers, entities, rendering   |
++-----------------------------------------------------+
+|  Systems (Pure Functions)    | Managers (Stateful)   |
+|    AbilitySystem             |   EntityManager       |
+|    CollisionSystem           |   GameStateManager    |
+|    WobblePhysics             |                       |
+|    ScoreSystem               | Entities (Data)       |
+|    SpawnSystem               |   Entity (base)       |
+|    MovementSystem            |   Animal (+ variants) |
+|    BushSystem                |   Player (farmer)     |
++-----------------------------------------------------+
+|  Renderers (Canvas Drawing)                          |
+|    animals.ts       background.ts                    |
+|    tornado.ts       bush.ts                          |
+|    farmer.ts                                         |
++-----------------------------------------------------+
+|  AI (YUKA goal-driven)                               |
+|    GameDirector     WobbleGovernor    DuckBehavior   |
++-----------------------------------------------------+
 ```
 
 ## Design Patterns
@@ -37,9 +39,10 @@ The game is transitioning from a monolithic architecture to a modular one:
 ### 1. Pure Functions for Systems
 All game logic systems use pure functions:
 ```typescript
-// Input state → Output state (no side effects)
+// Input state -> Output state (no side effects)
 function updateStackWobble(state, animals, velocity, dt): StackWobbleState
 function calculateCatchPoints(animal, position, scoreState): ScoreEvent
+function activateAbility(state, animal, player, entities): AbilitySystemState
 ```
 
 **Benefits:**
@@ -60,7 +63,7 @@ Entities are data containers with typed components:
 ```typescript
 interface AnimalEntity extends Entity {
   type: 'animal';
-  animal: AnimalComponents;  // Animal-specific data
+  animal: AnimalComponents;  // Animal-specific data (type, variant, weight, ability state)
 }
 ```
 
@@ -79,6 +82,18 @@ class GameStateManager {
   addScore(points, options): number;
   loseLife(): boolean;
 }
+```
+
+### 6. AbilitySystem Integration
+Abilities follow the same pure-function pattern as other systems:
+```typescript
+// Game.ts orchestrates the lifecycle:
+// 1. Player taps stacked animal -> findTappedAbilityAnimal()
+// 2. Resolve ability type        -> resolveAbilityType()
+// 3. Activate ability            -> activateAbility()
+// 4. Each frame update effects   -> updateAbilityEffects()
+// 5. Passive checks in movement  -> getFeatherFloatMultiplier(), getMudSlowFactor()
+// 6. Stack cooldown ticks        -> updateStackAbilityCooldowns()
 ```
 
 ## Key Technical Decisions
@@ -104,72 +119,92 @@ class GameStateManager {
 - Easy to add variants
 - Smaller bundle size
 
+### 5. Unified AnimalType
+- Single 9-type union: chicken, duck, pig, goat, sheep, cow, goose, horse, rooster
+- Used consistently across entities, spawn system, ECS archetypes, and renderers
+- `AnimalSpawnTemplate` (game stats) vs `AnimalArchetype` (rendering colors) avoids naming conflicts
+
 ## Component Relationships
 
 ### Spawn Flow
 ```
-GameDirector → decides spawn
-     ↓
-SpawnSystem → creates AnimalEntity
-     ↓
-Tornado → visual spawn effect
-     ↓
-EntityManager → tracks entity
+GameDirector -> decides spawn
+     |
+SpawnSystem -> creates AnimalEntity via AnimalSpawnTemplate
+     |
+Tornado -> visual spawn effect
+     |
+EntityManager -> tracks entity
 ```
 
 ### Catch Flow
 ```
-InputManager → drag position
-     ↓
+InputManager -> drag position
+     |
 Player position updated
-     ↓
-CollisionSystem → check catch
-     ↓
-ScoreSystem → calculate points
-     ↓
-WobblePhysics → apply impact
-     ↓
-GameStateManager → update score
+     |
+CollisionSystem -> check catch
+     |
+ScoreSystem -> calculate points
+     |
+WobblePhysics -> apply impact
+     |
+GameStateManager -> update score
+```
+
+### Ability Flow
+```
+Player taps stacked animal
+     |
+findTappedAbilityAnimal() -> identifies which animal
+     |
+resolveAbilityType() -> determines ability from AnimalSpawnTemplate
+     |
+activateAbility() -> creates active effect in AbilitySystemState
+     |
+updateAbilityEffects() each frame -> applies effects (slow zones, shields, etc.)
+     |
+Effect expires -> removed from state, cooldown starts
 ```
 
 ### Render Flow
 ```
 GameLoop.render()
-     ↓
+     |
 Renderer.render()
-     ↓
-┌──────────────────┐
-│ drawBackground() │
-│ drawBankZone()   │
-│ drawFloorZone()  │
-│ drawTornado()    │
-│ drawPlayer()     │
-│ drawAnimals()    │
-│ drawEffects()    │
-└──────────────────┘
+     |
++------------------+
+| drawBackground() |
+| drawBankZone()   |
+| drawFloorZone()  |
+| drawTornado()    |
+| drawPlayer()     |
+| drawAnimals()    |
+| drawEffects()    |
++------------------+
 ```
 
 ## Critical Implementation Paths
 
 ### Wobble Physics
 ```
-Player velocity → Movement wobble
-Stack height → Height multiplier
-Animal weight → Weight factor
-     ↓
+Player velocity -> Movement wobble
+Stack height -> Height multiplier
+Animal weight -> Weight factor
+     |
 Wobble angle calculated per animal
-     ↓
+     |
 Propagate up stack (transfer ratio)
-     ↓
+     |
 Check thresholds (warning/collapse)
 ```
 
 ### Scoring
 ```
 Base points (animal type)
-  × Catch bonus (perfect/good)
-  × Stack bonus (exponential)
-  × Combo multiplier
-  × Power-up multiplier
+  x Catch bonus (perfect/good)
+  x Stack bonus (exponential)
+  x Combo multiplier
+  x Power-up multiplier
   = Final score
 ```

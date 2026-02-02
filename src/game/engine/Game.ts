@@ -6,7 +6,7 @@
  */
 
 import { feedback } from '@/platform';
-import { GAME_CONFIG } from '../config';
+import { GAME_CONFIG, POWER_UPS, type PowerUpType } from '../config';
 
 // Core
 import { GameLoop } from './core/GameLoop';
@@ -18,6 +18,7 @@ import { InputManager } from './input/InputManager';
 // Entities
 import { createPlayer, updatePlayerPosition, getPlayerCenterX, getStackTopY, type PlayerEntity, addToStack, clearStack, isInvincible, setInvincible, updatePowerUpTimers, activateMagnet, activateDoublePoints } from './entities/Player';
 import { createRandomAnimal, catchAnimal, type AnimalEntity } from './entities/Animal';
+import { createPowerUp, updatePowerUpBob, getPowerUpBobOffset, type PowerUpEntity } from './entities/PowerUp';
 
 // Managers
 import { EntityManager, createEntityManager } from './managers/EntityManager';
@@ -28,6 +29,19 @@ import { RenderContext, createRenderContext } from './rendering/RenderContext';
 import { Renderer } from './rendering/Renderer';
 
 // Systems
+import {
+  createBushFromPoop,
+  createBushRuntimeState,
+  addBushToState,
+  removeBushFromState,
+  getActiveBushes,
+  updateAllBushes,
+  findNearbyBushes,
+  applyBushBounce,
+  shouldRemoveBush,
+  type BushRuntimeState,
+} from './systems/BushSystem';
+import type { ProjectileState } from './state/GameState';
 import { calculateMagneticPull } from './systems/CollisionSystem';
 import { createStackWobbleState, applyStackImpulse, getAnimalWeight, type StackWobbleState, type AnimalWobbleState, DEFAULT_WOBBLE_CONFIG } from './systems/WobblePhysics';
 import {
@@ -41,7 +55,9 @@ import {
   getFeatherFloatMultiplier,
   getMudSlowFactor,
   checkHayPlatformBounce,
+  getAbilityIndicators,
   type AbilitySystemState,
+  type AbilityIndicator as AbilityIndicatorData,
 } from './systems/AbilitySystem';
 
 // AI
@@ -61,6 +77,7 @@ export interface GameCallbacks extends GameStateCallbacks {
   onBankComplete?: (count: number) => void;
   onStackTopple?: () => void;
   onStackChange?: (height: number, canBank: boolean) => void;
+  onAbilityChange?: (indicators: AbilityIndicatorData[]) => void;
 }
 
 export class Game {
@@ -90,6 +107,9 @@ export class Game {
 
   // Abilities
   private abilityState: AbilitySystemState;
+
+  // Bushes
+  private bushRuntime: BushRuntimeState;
 
   // Callbacks
   private callbacks: GameCallbacks;
@@ -136,6 +156,9 @@ export class Game {
     // Initialize abilities
     this.abilityState = createAbilitySystemState();
 
+    // Initialize bushes
+    this.bushRuntime = createBushRuntimeState();
+
     // Initialize input
     this.input = new InputManager(canvas, {
       onDragMove: this.handleDragMove.bind(this),
@@ -164,6 +187,7 @@ export class Game {
     this.entities.clear();
     this.wobbleState = createStackWobbleState();
     this.abilityState = createAbilitySystemState();
+    this.bushRuntime = createBushRuntimeState();
     this.tornadoState = this.createInitialTornadoState();
     this.gameDirector = new GameDirector();
     
@@ -190,7 +214,7 @@ export class Game {
     this.gameLoop.start();
     
     // Notify UI
-    this.callbacks.onStackChange?.(0, false);
+    this.notifyStackChange();
   }
 
   /**
@@ -241,7 +265,7 @@ export class Game {
     // Effects
     feedback.play('bank');
     this.callbacks.onBankComplete?.(this.gameState.bankedAnimals);
-    this.callbacks.onStackChange?.(0, false);
+    this.notifyStackChange();
   }
 
   /**
@@ -284,6 +308,14 @@ export class Game {
   }
 
   // Private methods
+
+  private notifyStackChange(): void {
+    const player = this.entities.get<PlayerEntity>('player');
+    const height = player?.player.stack.length ?? 0;
+    const canBankNow = this.gameState.canBank(height);
+    this.callbacks.onStackChange?.(height, canBankNow);
+    this.callbacks.onAbilityChange?.(getAbilityIndicators(player?.player.stack ?? []));
+  }
 
   private createInitialTornadoState(): TornadoState {
     return {
@@ -413,7 +445,13 @@ export class Game {
     if (this.gameState.shouldSpawn(now)) {
       this.spawnAnimal();
     }
-    
+
+    // Power-up spawn check
+    this.checkPowerUpSpawn(now);
+
+    // Update falling power-ups
+    this.updatePowerUps(dt, player);
+
     // Update ability effects
     const playerCenterX = getPlayerCenterX(player);
     const stackTopY = getStackTopY(player);
@@ -437,10 +475,29 @@ export class Game {
     }
 
     // Handle ability side-effects: spawn bushes from poop shot
-    // (Bush creation is handled externally -- for now we just log the positions
-    // so the renderer data is available. Full BushSystem integration can
-    // create bushes from these positions.)
-    // Future: this.bushSystem.createBushAt(pos.x, pos.y) for each position
+    for (const pos of abilityResult.bushSpawnPositions) {
+      const projectile: ProjectileState = {
+        id: `proj_${Date.now()}`,
+        x: pos.x,
+        y: pos.y,
+        width: 10,
+        height: 10,
+        velocityX: 0,
+        velocityY: 0,
+        rotation: 0,
+        scale: 1,
+        active: true,
+        type: "poop",
+        sourceAnimalId: "",
+        damage: 0,
+        lifetime: 0,
+      };
+      const bush = createBushFromPoop(projectile, groundY);
+      this.bushRuntime = addBushToState(this.bushRuntime, bush);
+    }
+
+    // Update existing bushes (growth, lifetime)
+    this.updateBushes(dt);
 
     // Award ability bonus score
     if (abilityResult.bonusScore > 0) {
@@ -538,7 +595,8 @@ export class Game {
       this.entities,
       this.gameState,
       this.tornadoState,
-      invincible
+      invincible,
+      this.activeBushes
     );
   }
 
@@ -560,12 +618,12 @@ export class Game {
       recentMisses: 0,
       recentPerfects: 0,
       catchRate: 0.5,
-      activeDucks: this.entities.getCountByType('animal'),
+      activeAnimals: this.entities.getCountByType('animal'),
       activePowerUps: this.entities.getCountByType('powerup'),
       screenWidth: this.canvas.width,
       screenHeight: this.canvas.height,
       level: this.gameState.level,
-      bankedDucks: this.gameState.getState().bankedAnimals,
+      bankedAnimals: this.gameState.getState().bankedAnimals,
     };
     
     this.gameDirector.updateGameState(state);
@@ -677,6 +735,26 @@ export class Game {
             animal.velocity.linear.x += hayBounce.bounceVelocityX;
           }
         }
+
+        // Bush bounce: animals bounce off growing bushes
+        const activeBushes = getActiveBushes(this.bushRuntime);
+        if (activeBushes.length > 0 && animal.velocity) {
+          const animalCX = animal.transform.position.x + (animal.bounds?.width ?? 50) / 2;
+          const animalCY = animal.transform.position.y + (animal.bounds?.height ?? 50) / 2;
+          const nearby = findNearbyBushes(activeBushes, animalCX, animalCY, 50);
+          if (nearby.length > 0 && animal.velocity.linear.y > 0) {
+            const bush = nearby[0];
+            if (bush.growthStage > 0.3) {
+              // Bounce the animal
+              animal.velocity.linear.y = -Math.abs(animal.velocity.linear.y) * bush.bounceStrength;
+              animal.velocity.linear.x += (Math.random() - 0.5) * 2;
+              // Wear down the bush
+              this.bushRuntime.bushes.set(bush.id, applyBushBounce(bush));
+              this.bushRuntime.totalBounces++;
+              feedback.play("land");
+            }
+          }
+        }
       }
 
       // Check if missed (fell past player)
@@ -786,10 +864,7 @@ export class Game {
         }
 
         // Notify UI
-        this.callbacks.onStackChange?.(
-          updatedPlayer.player.stack.length,
-          this.gameState.canBank(updatedPlayer.player.stack.length),
-        );
+        this.notifyStackChange();
       }
     }
   }
@@ -899,19 +974,152 @@ export class Game {
       this.renderer.shake(1);
     }
     
-    this.callbacks.onStackChange?.(0, false);
+    this.notifyStackChange();
+  }
+
+  private updateBushes(dt: number): void {
+    const now = performance.now();
+    const activeBushes = getActiveBushes(this.bushRuntime);
+
+    // Update growth
+    const updated = updateAllBushes(activeBushes, dt);
+    for (const bush of updated) {
+      this.bushRuntime.bushes.set(bush.id, bush);
+    }
+
+    // Remove expired bushes
+    for (const bush of activeBushes) {
+      if (shouldRemoveBush(bush, now - 30000, now)) {
+        this.bushRuntime = removeBushFromState(this.bushRuntime, bush.id);
+      }
+    }
+  }
+
+  /**
+   * Get active bushes for rendering
+   */
+  get activeBushes() {
+    return getActiveBushes(this.bushRuntime);
+  }
+
+  private checkPowerUpSpawn(now: number): void {
+    const { powerUps: powerUpConfig } = GAME_CONFIG;
+
+    // Don't spawn before minimum level
+    if (this.gameState.level < powerUpConfig.minLevelToSpawn) return;
+
+    // Check spawn interval
+    const timeSinceLastPowerUp = now - this.gameState.getState().lastPowerUpTime;
+    if (timeSinceLastPowerUp < powerUpConfig.spawnInterval) return;
+
+    // Ask director if we should spawn
+    const decision = this.gameDirector.decidePowerUp();
+    if (!decision.shouldSpawn) return;
+
+    // Spawn from tornado or decision position
+    const spawnX = decision.x || this.tornadoState.x + (Math.random() - 0.5) * 60;
+    const spawnY = -50;
+
+    const powerUp = createPowerUp(spawnX, spawnY, decision.type);
+    this.entities.add(powerUp);
+
+    this.gameState.updatePowerUpTime(now);
+  }
+
+  private updatePowerUps(dt: number, player: PlayerEntity): void {
+    const powerUps = this.entities.getByType<PowerUpEntity>("powerup");
+    const playerCenterX = getPlayerCenterX(player);
+    const playerY = player.transform.position.y;
+    const { collectRadius } = GAME_CONFIG.powerUps;
+
+    for (const powerUp of powerUps) {
+      // Apply gravity (slower than animals)
+      if (powerUp.velocity) {
+        powerUp.transform.position.y += powerUp.velocity.linear.y * (dt / 16.67);
+      }
+
+      // Update bob animation
+      const updated = updatePowerUpBob(powerUp, dt);
+      this.entities.replace(updated);
+
+      // Check collection (overlap with player/stack)
+      const puCenterX = powerUp.transform.position.x + (powerUp.bounds?.width ?? 40) / 2;
+      const puCenterY = powerUp.transform.position.y + (powerUp.bounds?.height ?? 40) / 2;
+      const dx = puCenterX - playerCenterX;
+      const dy = puCenterY - playerY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < collectRadius + (player.bounds?.width ?? 80) / 2) {
+        this.entities.remove(powerUp);
+        this.applyPowerUp(powerUp.powerup.powerUpType, player);
+        continue;
+      }
+
+      // Check if missed (fell off screen)
+      if (powerUp.transform.position.y > this.canvas.height + 50) {
+        this.entities.remove(powerUp);
+      }
+    }
+  }
+
+  private applyPowerUp(type: PowerUpType, player: PlayerEntity): void {
+    feedback.play("perfect");
+
+    switch (type) {
+      case "hay_bale": {
+        // Restore one life
+        this.gameState.addLife();
+        this.callbacks.onLifeEarned?.();
+        break;
+      }
+      case "golden_egg": {
+        // Double points
+        const goldenDuration = POWER_UPS.golden_egg.duration ?? 8000;
+        const dpPlayer = activateDoublePoints(player, goldenDuration);
+        this.entities.replace(dpPlayer);
+        break;
+      }
+      case "water_trough": {
+        // Magnetic pull
+        const magnetDuration = POWER_UPS.water_trough.duration ?? 5000;
+        const magPlayer = activateMagnet(player, magnetDuration);
+        this.entities.replace(magPlayer);
+        break;
+      }
+      case "salt_lick": {
+        // Full restore + invincibility
+        this.gameState.fullRestore();
+        const invDuration = POWER_UPS.salt_lick.invincibilityDuration ?? 3000;
+        const invPlayer = setInvincible(player, invDuration);
+        this.entities.replace(invPlayer);
+        break;
+      }
+      case "corn_feed": {
+        // Merge stack into bank (only if enough stacked)
+        const minStack = POWER_UPS.corn_feed.minStackToUse ?? 3;
+        if (player.player.stack.length >= minStack) {
+          this.bankStack();
+        }
+        break;
+      }
+      case "lucky_horseshoe": {
+        // Increase max hearts
+        this.gameState.increaseMaxLives();
+        break;
+      }
+    }
   }
 
   private updateMusicIntensity(): void {
     const state = this.gameState.getState();
     const player = this.entities.get<PlayerEntity>('player');
     const stackHeight = player?.player.stack.length ?? 0;
-    
+
     const stackFactor = Math.min(1, stackHeight / 10);
     const levelFactor = Math.min(1, state.level / 10);
     const dangerFactor = state.inDangerState ? 0.3 : 0;
     const comboFactor = Math.min(0.2, state.combo / 20);
-    
+
     const intensity = Math.min(1, stackFactor * 0.4 + levelFactor * 0.3 + dangerFactor + comboFactor);
     feedback.setIntensity(intensity);
   }

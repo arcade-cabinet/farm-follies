@@ -161,7 +161,7 @@ const ACHIEVEMENTS: AchievementData[] = [
   {
     id: "safe_keeper",
     name: "Safe Keeper",
-    description: "Bank 10 ducks total",
+    description: "Bank 10 animals total",
     icon: "🏦",
     tier: "bronze",
     condition: (s) => s.totalBanked >= 10,
@@ -170,7 +170,7 @@ const ACHIEVEMENTS: AchievementData[] = [
   {
     id: "banker",
     name: "Banker",
-    description: "Bank 50 ducks total",
+    description: "Bank 50 animals total",
     icon: "💰",
     tier: "silver",
     condition: (s) => s.totalBanked >= 50,
@@ -190,7 +190,7 @@ const ACHIEVEMENTS: AchievementData[] = [
   {
     id: "ice_age",
     name: "Ice Age",
-    description: "Freeze 10 ducks",
+    description: "Freeze 10 animals",
     icon: "❄️",
     tier: "bronze",
     condition: (s) => s.ducksFrozen >= 10,
@@ -240,8 +240,8 @@ const ACHIEVEMENTS: AchievementData[] = [
   },
 ];
 
-const STORAGE_KEY = "psyduck-achievements";
-const STATS_KEY = "psyduck-stats";
+const STORAGE_KEY = "farm-follies-achievements";
+const STATS_KEY = "farm-follies-stats";
 
 /**
  * Get default stats

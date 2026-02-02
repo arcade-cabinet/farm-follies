@@ -55,7 +55,7 @@ export const GAME_MODES: Record<GameModeType, GameModeConfig> = {
     scoreMultiplier: 1.5,
     specialRules: [
       "No lives - drops don't end the game",
-      "Faster duck spawns",
+      "Faster animal spawns",
       "1.5x score multiplier",
     ],
   },
@@ -92,10 +92,10 @@ export const GAME_MODES: Record<GameModeType, GameModeConfig> = {
     hasLives: true,
     hasBanking: true,
     hasTimer: false,
-    spawnRateMultiplier: 0.5, // Fewer regular ducks
+    spawnRateMultiplier: 0.5, // Fewer regular animals
     scoreMultiplier: 2,
     specialRules: [
-      "Boss ducks appear every 30 seconds",
+      "Boss animals appear every 30 seconds",
       "Bosses require multiple catches",
       "Defeat bosses for huge bonuses",
       "2x score multiplier",
@@ -140,7 +140,7 @@ export function saveUnlockedModes(): void {
     .filter(([_, mode]) => mode.unlocked)
     .map(([id]) => id);
 
-  localStorage.setItem("psyduck-modes-unlocked", JSON.stringify(unlocked));
+  localStorage.setItem("farm-follies-modes-unlocked", JSON.stringify(unlocked));
 }
 
 /**
@@ -159,7 +159,7 @@ export function loadUnlockedModes(): void {
   if (typeof window === "undefined") return;
 
   try {
-    const saved = localStorage.getItem("psyduck-modes-unlocked");
+    const saved = localStorage.getItem("farm-follies-modes-unlocked");
     if (saved) {
       const unlocked = JSON.parse(saved) as string[];
       for (const id of unlocked) {

@@ -10,7 +10,8 @@ import { GameStyles } from "../components/GameStyles";
 import { PauseButton } from "../components/PauseButton";
 import { PauseMenu } from "../components/PauseMenu";
 import { PerfectIndicator } from "../components/PerfectIndicator";
-import { PokeballButton } from "../components/PokeballButton";
+import { AbilityBar } from "../components/AbilityIndicator";
+import { BankButton } from "../components/BankButton";
 import { ScoreDisplay } from "../components/ScoreDisplay";
 import { SoundToggle } from "../components/SoundToggle";
 import { hasCompletedTutorial, Tutorial } from "../components/Tutorial";
@@ -38,9 +39,9 @@ export function GameScreen() {
   const { isMobile, fontSize, spacing } = useResponsiveScale();
 
   const handleGameOver = useCallback(
-    (score: number, bankedDucks: number) => {
+    (score: number, bankedAnimals: number) => {
       setFinalScore(score);
-      setFinalBanked(bankedDucks);
+      setFinalBanked(bankedAnimals);
       const isNew = updateHighScore(score);
       setIsNewHighScore(isNew);
       if (isNew) {
@@ -61,7 +62,7 @@ export function GameScreen() {
       stats.totalScore += score;
       stats.highScore = Math.max(stats.highScore, score);
       stats.totalGames += 1;
-      stats.totalBanked += bankedDucks;
+      stats.totalBanked += bankedAnimals;
       saveStats(stats);
 
       // Check for mode unlocks
@@ -103,7 +104,7 @@ export function GameScreen() {
     multiplier,
     combo,
     stackHeight,
-    bankedDucks,
+    bankedAnimals,
     level,
     lives,
     maxLives,
@@ -112,6 +113,7 @@ export function GameScreen() {
     showPerfect,
     showGood,
     inDanger,
+    abilityIndicators,
     isPaused,
     startGame,
     bankStack,
@@ -236,7 +238,7 @@ export function GameScreen() {
             combo={combo}
             level={level}
             stackHeight={stackHeight}
-            bankedDucks={bankedDucks}
+            bankedAnimals={bankedAnimals}
             highScore={highScore}
             lives={lives}
             maxLives={maxLives}
@@ -266,7 +268,7 @@ export function GameScreen() {
         {screen === "gameover" && (
           <GameOverScreen
             score={finalScore}
-            bankedDucks={finalBanked}
+            bankedAnimals={finalBanked}
             highScore={highScore}
             isNewHighScore={isNewHighScore}
             earnedCoins={earnedCoins}
@@ -288,9 +290,22 @@ export function GameScreen() {
         <SoundToggle />
       </div>
 
-      {/* Pokeball Bank Button */}
+      {/* Ability Indicators */}
+      {screen === "playing" && !isPaused && (
+        <div
+          className="absolute z-30"
+          style={{
+            left: spacing.sm,
+            bottom: `calc(${spacing.lg} + env(safe-area-inset-bottom, 0px))`,
+          }}
+        >
+          <AbilityBar indicators={abilityIndicators} />
+        </div>
+      )}
+
+      {/* Bank Button */}
       {screen === "playing" && (
-        <PokeballButton visible={canBank} stackCount={stackHeight} onClick={bankStack} />
+        <BankButton visible={canBank} stackCount={stackHeight} onClick={bankStack} />
       )}
 
       {/* Gameplay hints */}

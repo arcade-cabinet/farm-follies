@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { feedback } from "@/platform";
 import { GAME_CONFIG } from "../config";
 import { Game, type GameCallbacks } from "../engine/Game";
+import type { AbilityIndicatorData } from "../engine";
 
 export interface UseGameEngineReturn {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -17,7 +18,7 @@ export interface UseGameEngineReturn {
   multiplier: number;
   combo: number;
   stackHeight: number;
-  bankedDucks: number;
+  bankedAnimals: number;
   level: number;
   lives: number;
   maxLives: number;
@@ -29,6 +30,7 @@ export interface UseGameEngineReturn {
   showPerfect: boolean;
   showGood: boolean;
   inDanger: boolean;
+  abilityIndicators: AbilityIndicatorData[];
   // Actions
   startGame: () => void;
   bankStack: () => void;
@@ -37,7 +39,7 @@ export interface UseGameEngineReturn {
 }
 
 interface UseGameEngineOptions {
-  onGameOver?: (finalScore: number, bankedDucks: number) => void;
+  onGameOver?: (finalScore: number, bankedAnimals: number) => void;
   onLevelUp?: (level: number) => void;
   onLifeEarned?: () => void;
   onStackTopple?: () => void;
@@ -45,7 +47,7 @@ interface UseGameEngineOptions {
   onMerge?: (count: number) => void;
   onPerfectCatch?: () => void;
   onFireballShot?: () => void;
-  onDuckFrozen?: () => void;
+  onAnimalFrozen?: () => void;
 }
 
 export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngineReturn {
@@ -56,7 +58,7 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
   const [multiplier, setMultiplier] = useState(1);
   const [combo, setCombo] = useState(0);
   const [stackHeight, setStackHeight] = useState(0);
-  const [bankedDucks, setBankedDucks] = useState(0);
+  const [bankedAnimals, setBankedAnimals] = useState(0);
   const [level, setLevel] = useState(1);
   const [lives, setLives] = useState<number>(GAME_CONFIG.lives.starting);
   const [maxLives] = useState<number>(GAME_CONFIG.lives.max);
@@ -68,6 +70,7 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
   const [showPerfect, setShowPerfect] = useState(false);
   const [showGood, setShowGood] = useState(false);
   const [inDanger, setInDanger] = useState(false);
+  const [abilityIndicators, setAbilityIndicators] = useState<AbilityIndicatorData[]>([]);
 
   // Initialize engine
   useEffect(() => {
@@ -115,7 +118,7 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
         // Could add miss animation here
       },
       onBankComplete: (total) => {
-        setBankedDucks(total);
+        setBankedAnimals(total);
       },
       onLevelUp: (newLevel) => {
         setLevel(newLevel);
@@ -133,6 +136,9 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
       onStackTopple: () => {
         options.onStackTopple?.();
       },
+      onAbilityChange: (indicators) => {
+        setAbilityIndicators(indicators);
+      },
     };
 
     const engine = new Game(canvas, callbacks);
@@ -146,7 +152,7 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
     options.onLevelUp,
     options.onLifeEarned,
     options.onStackTopple,
-    options.onDuckFrozen,
+    options.onAnimalFrozen,
     options.onFireballShot,
     options.onMerge,
     options.onPerfectCatch,
@@ -157,7 +163,7 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
     if (engineRef.current) {
       // Sync mute state before starting (Game.start handles init and music)
       const isMuted =
-        typeof window !== "undefined" && localStorage.getItem("psyduck-muted") === "true";
+        typeof window !== "undefined" && localStorage.getItem("farm-follies-muted") === "true";
       feedback.setMuted(isMuted);
 
       // Reset React state
@@ -168,11 +174,12 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
       setMultiplier(1);
       setCombo(0);
       setStackHeight(0);
-      setBankedDucks(0);
+      setBankedAnimals(0);
       setLevel(1);
       setLives(GAME_CONFIG.lives.starting);
       setCanBank(false);
       setInDanger(false);
+      setAbilityIndicators([]);
 
       // Game.start() handles feedback.init(), music start, and intensity
       engineRef.current.start();
@@ -207,7 +214,7 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
     multiplier,
     combo,
     stackHeight,
-    bankedDucks,
+    bankedAnimals,
     level,
     lives,
     maxLives,
@@ -219,6 +226,7 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
     showPerfect,
     showGood,
     inDanger,
+    abilityIndicators,
     // Actions
     startGame,
     bankStack,

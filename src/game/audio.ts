@@ -1,6 +1,6 @@
 /**
  * Audio System with Tone.js
- * Background music and sound effects for Psyduck's Infinite Headache Tower
+ * Background music and sound effects for Farm Follies
  */
 
 import * as Tone from "tone";
@@ -112,15 +112,15 @@ class AudioManager {
   startMusic(): void {
     if (!this.initialized || this.musicPlaying || this.muted) return;
 
-    // Psychic/mysterious theme in D minor
+    // Farm theme in D minor
     const _scale = ["D3", "E3", "F3", "G3", "A3", "Bb3", "C4", "D4"];
     const bassNotes = ["D2", "D2", "A2", "A2", "Bb2", "Bb2", "G2", "A2"];
 
-    // Arpeggio pattern - dreamy, slightly confused sounding
+    // Arpeggio pattern - playful, chaotic barnyard feel
     this.arpeggioLoop = new Tone.Pattern(
       (time, note) => {
         if (this.mainSynth && Math.random() > 0.3) {
-          // Some randomness for that confused Psyduck feel
+          // Some randomness for chaotic barnyard feel
           this.mainSynth.triggerAttackRelease(note, "16n", time, 0.3 + this.currentIntensity * 0.3);
         }
       },
@@ -151,7 +151,7 @@ class AudioManager {
       "8n"
     );
 
-    // Set tempo - slightly unsteady like Psyduck's headache
+    // Set tempo - slightly unsteady like a chaotic farm morning
     Tone.getTransport().bpm.value = 95;
 
     // Start all loops

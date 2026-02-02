@@ -10,7 +10,7 @@ import { useUISound } from "../hooks/useUISound";
 
 interface GameOverScreenProps {
   score: number;
-  bankedDucks: number; // Now represents banked animals
+  bankedAnimals: number; // Now represents banked animals
   highScore: number;
   isNewHighScore: boolean;
   earnedCoins: number;
@@ -20,7 +20,7 @@ interface GameOverScreenProps {
 
 export function GameOverScreen({
   score,
-  bankedDucks,
+  bankedAnimals,
   highScore,
   isNewHighScore,
   earnedCoins,
@@ -145,7 +145,7 @@ export function GameOverScreen({
                 className="game-font text-2xl"
                 style={{ color: FARM_COLORS.barn.red }}
               >
-                {bankedDucks}
+                {bankedAnimals}
               </p>
             </div>
 

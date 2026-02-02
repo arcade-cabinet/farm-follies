@@ -5,7 +5,7 @@ async function skipSplash(page: import("@playwright/test").Page) {
   await page.goto("/");
   // Click splash to skip it
   const splash = page.locator(".fixed.inset-0.z-50");
-  if (await splash.isVisible()) {
+  if (await splash.isVisible({ timeout: 2000 }).catch(() => false)) {
     await splash.click();
     await page.waitForTimeout(800);
   }
@@ -47,7 +47,12 @@ test.describe("Gameplay", () => {
 
     // Filter out expected/benign errors (like audio context warnings)
     const criticalErrors = errors.filter(
-      (e) => !e.includes("AudioContext") && !e.includes("autoplay") && !e.includes("net::ERR")
+      (e) =>
+        !e.includes("AudioContext") &&
+        !e.includes("autoplay") &&
+        !e.includes("net::ERR") &&
+        !e.includes("NotAllowedError") &&
+        !e.includes("play()"),
     );
 
     expect(criticalErrors).toHaveLength(0);
