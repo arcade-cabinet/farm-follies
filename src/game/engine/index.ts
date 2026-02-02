@@ -111,7 +111,6 @@ export {
 export * from './systems/WobblePhysics';
 export * from './systems/ScoreSystem';
 export * from './systems/SpawnSystem';
-export * from './systems/MovementSystem';
 export * from './systems/BushSystem';
 export { getAbilityIndicators, type AbilityIndicator as AbilityIndicatorData } from './systems/AbilitySystem';
 

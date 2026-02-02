@@ -15,7 +15,15 @@
 
 import { GameEntity, GoalEvaluator, Think } from "yuka";
 import type { AnimalTypeConfig, PowerUpType } from "../config";
-import type { AnimalBehaviorType } from "./AnimalBehavior";
+/** Behavior types for falling animals */
+export type AnimalBehaviorType =
+  | "normal"   // Falls straight down with slight drift
+  | "seeker"   // Actively seeks the player
+  | "evader"   // Tries to avoid the player
+  | "zigzag"   // Moves in a zigzag pattern
+  | "swarm"    // Follows other animals
+  | "dive"     // Fast dive at player
+  | "floater"; // Slow, drifting fall
 
 /**
  * Spawn decision from the director
@@ -415,25 +423,8 @@ export class GameDirector extends GameEntity {
    * Choose animal type config based on difficulty and strategy
    */
   private chooseAnimalType(): AnimalTypeConfig {
-    // Base probabilities
-    let fireChance = 0.1 + this.difficulty * 0.15;
-    let iceChance = 0.1 + this.difficulty * 0.1;
-
-    // Mercy mode: fewer special animals
-    if (this.mercyModeActive) {
-      fireChance *= 0.5;
-      iceChance *= 0.5;
-    }
-
-    // Challenge mode: more special animals
-    if (this.activeGoal === "challenge") {
-      fireChance *= 1.5;
-      iceChance *= 1.3;
-    }
-
-    const roll = Math.random();
-    if (roll < fireChance) return "fire";
-    if (roll < fireChance + iceChance) return "ice";
+    // Special variant selection is now handled per-animal in ANIMAL_ARCHETYPES.
+    // The director just returns "normal" — variant rarity rolls happen in Animal.ts.
     return "normal";
   }
 

@@ -302,24 +302,18 @@ function nextEffectId(state: AbilitySystemState): {
  * For special ducks with feather_float, this is 0.3; for all others, 1.0.
  */
 export function getFeatherFloatMultiplier(animal: AnimalEntity): number {
-  if (!animal.animal.abilityReady) return 1.0;
+  if (!animal.animal.abilityReady || animal.animal.state !== "falling") return 1.0;
 
-  // The variant's special ability type is stored in the archetype data.
-  // We check the variant ID against known feather_float variants.
-  // The "fire" duck variant from SpawnSystem uses "heat_wave", not feather_float.
-  // The blue duck (Sir Quacksalot) uses feather_float.
-  // Since Animal.ts does not store the ability type string directly, we infer
-  // from animal type + variant: duck type with abilityReady = feather_float.
-  // However, there could be other ability-ready ducks. We check the
-  // archetype variant data to be precise.
-  const config = ABILITY_CONFIGS.feather_float;
-  if (
-    animal.animal.animalType === "duck" &&
-    animal.animal.abilityReady &&
-    animal.animal.state === "falling"
-  ) {
+  // Look up the animal's archetype and variant to check if it has feather_float
+  const archetype = ANIMAL_ARCHETYPES.get(animal.animal.animalType);
+  if (!archetype) return 1.0;
+
+  const variant = archetype.variants.find((v) => v.id === animal.animal.variant);
+  if (variant?.specialAbility?.type === "feather_float") {
+    const config = ABILITY_CONFIGS.feather_float;
     return config.params.fallSpeedMultiplier;
   }
+
   return 1.0;
 }
 
@@ -629,6 +623,7 @@ interface EffectTickAccumulator {
   hayPlatforms: AbilityUpdateResult["hayPlatforms"];
   honeyTrapCenteringFactor: number;
   bushSpawnPositions: Array<{ x: number; y: number }>;
+  bonusScore: number;
 }
 
 function tickPoopShot(
@@ -766,6 +761,7 @@ export function updateAbilityEffects(
     hayPlatforms: [],
     honeyTrapCenteringFactor: 0,
     bushSpawnPositions: [],
+    bonusScore: 0,
   };
 
   for (const effect of state.activeEffects) {
@@ -786,7 +782,7 @@ export function updateAbilityEffects(
     hayPlatforms: acc.hayPlatforms,
     honeyTrapCenteringFactor: acc.honeyTrapCenteringFactor,
     bushSpawnPositions: acc.bushSpawnPositions,
-    bonusScore: 0,
+    bonusScore: acc.bonusScore,
   };
 }
 

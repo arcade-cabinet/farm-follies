@@ -314,17 +314,11 @@ export const GAME_CONFIG = {
       decayTime: 15000,   // Time before bush shrinks (ms)
     },
     
-    // Ability projectile physics (fire breath, etc.)
+    // Ability projectile physics
     projectile: {
       speed: 8,
       size: 20,
       duration: 3000,
-    },
-    
-    // Legacy ice physics
-    ice: {
-      fallSpeed: 2,
-      crackStages: 5,
     },
   },
 
@@ -476,14 +470,6 @@ export const GAME_CONFIG = {
       feet: FARM_COLORS.animals.duck.feet,
       outline: '#8B7355',
     },
-    fireAnimal: {
-      body: '#FF7043',
-      beak: '#FFAB91',
-    },
-    iceAnimal: {
-      body: '#4FC3F7',
-      beak: '#B3E5FC',
-    },
     // Bank button (barn-themed)
     bankButton: {
       top: FARM_COLORS.barn.red,
@@ -509,34 +495,17 @@ export const GAME_CONFIG = {
   },
 } as const;
 
-// Animal type config for variant types
-export type AnimalTypeConfig = 'normal' | 'fire' | 'ice';
+// Animal type config — all animals use the same base config now
+// (special abilities are defined per-variant in ANIMAL_ARCHETYPES)
+export type AnimalTypeConfig = 'normal';
 
 export const ANIMAL_TYPE_CONFIGS = {
   normal: {
-    spawnWeight: 0.85,
+    spawnWeight: 1.0,
     ability: null,
     colors: {
       body: FARM_COLORS.animals.duck.body,
       beak: FARM_COLORS.animals.duck.beak,
-    },
-  },
-  fire: {
-    spawnWeight: 0.08,
-    ability: 'fire_breath',
-    abilityCooldown: 3000,
-    colors: {
-      body: '#FF7043',
-      beak: '#FFAB91',
-    },
-  },
-  ice: {
-    spawnWeight: 0.07,
-    ability: 'freeze',
-    abilityCooldown: 5000,
-    colors: {
-      body: '#4FC3F7',
-      beak: '#B3E5FC',
     },
   },
 } as const;

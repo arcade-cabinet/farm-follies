@@ -297,7 +297,7 @@ export class GameStateManager {
   increaseMaxLives(): void {
     if (this.state.maxLives < livesConfig.absoluteMax) {
       this.state.maxLives++;
-      this.state.lives++; // Also heal
+      // Only raise the cap — don't heal. Use heal() explicitly to restore lives.
       this.callbacks.onLivesChange?.(this.state.lives, this.state.maxLives);
     }
   }

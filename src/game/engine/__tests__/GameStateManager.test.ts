@@ -417,13 +417,13 @@ describe("GameStateManager", () => {
   });
 
   describe("increaseMaxLives", () => {
-    it("increases maxLives and heals", () => {
+    it("increases maxLives without healing", () => {
       manager.startGame();
       const prevMax = manager.getState().maxLives;
       const prevLives = manager.lives;
       manager.increaseMaxLives();
       expect(manager.getState().maxLives).toBe(prevMax + 1);
-      expect(manager.lives).toBe(prevLives + 1);
+      expect(manager.lives).toBe(prevLives); // Should NOT auto-heal
     });
 
     it("does not exceed absoluteMax", () => {

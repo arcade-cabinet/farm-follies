@@ -114,6 +114,7 @@ export class Game {
 
   // Bushes
   private bushRuntime: BushRuntimeState;
+  private bushCreationTimes: Map<string, number> = new Map();
 
   // Particles
   private particleSystem: ParticleSystem;
@@ -201,6 +202,7 @@ export class Game {
     this.wobbleState = createStackWobbleState();
     this.abilityState = createAbilitySystemState();
     this.bushRuntime = createBushRuntimeState();
+    this.bushCreationTimes.clear();
     this.particleSystem.clear();
     this.tornadoState = this.createInitialTornadoState();
     this.gameDirector = new GameDirector();
@@ -512,6 +514,7 @@ export class Game {
       };
       const bush = createBushFromPoop(projectile, groundY);
       this.bushRuntime = addBushToState(this.bushRuntime, bush);
+      this.bushCreationTimes.set(bush.id, performance.now());
     }
 
     // Update existing bushes (growth, lifetime)
@@ -659,11 +662,13 @@ export class Game {
   private spawnAnimal(): void {
     const decision = this.gameDirector.decideSpawn();
     if (!decision.shouldSpawn) return;
-    
-    // Spawn from tornado position
-    const spawnX = this.tornadoState.x + (Math.random() - 0.5) * 40;
+
+    // Use director's spawn X position (accounts for player modeling), fall back to tornado
+    const spawnX = decision.x !== 0
+      ? decision.x
+      : this.tornadoState.x + (Math.random() - 0.5) * 40;
     const spawnY = -this.scale.entityHeight;
-    
+
     const animal = createRandomAnimal(spawnX, spawnY, this.gameState.level);
     this.entities.add(animal);
     
@@ -1031,8 +1036,10 @@ export class Game {
 
     // Remove expired bushes
     for (const bush of activeBushes) {
-      if (shouldRemoveBush(bush, now - 30000, now)) {
+      const creationTime = this.bushCreationTimes.get(bush.id) ?? now;
+      if (shouldRemoveBush(bush, creationTime, now)) {
         this.bushRuntime = removeBushFromState(this.bushRuntime, bush.id);
+        this.bushCreationTimes.delete(bush.id);
       }
     }
   }
