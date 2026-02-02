@@ -85,7 +85,7 @@
 ### Technical Debt
 - `src/game/engine/state/GameState.ts` still has legacy state types (used by SpawnSystem/AI) -- could be consolidated
 - Some tests use `as any` casts for partial mocks
-- `DuckBehavior.ts` in `src/game/ai/` retains "Duck" naming (functional, just naming)
+- ~~`DuckBehavior.ts` "Duck" naming~~ -- RESOLVED: renamed to `AnimalBehavior.ts`
 
 ### Gameplay Issues
 - None critical -- game is playable

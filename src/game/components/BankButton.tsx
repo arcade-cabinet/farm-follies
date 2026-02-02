@@ -48,29 +48,29 @@ export function BankButton({ visible, stackCount, onClick }: BankButtonProps) {
     ctx.fill();
 
     // Top half (red)
-    ctx.fillStyle = GAME_CONFIG.colors.pokeball.top;
+    ctx.fillStyle = GAME_CONFIG.colors.bankButton.top;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, Math.PI, 0);
     ctx.fill();
 
     // Bottom half (white)
-    ctx.fillStyle = GAME_CONFIG.colors.pokeball.bottom;
+    ctx.fillStyle = GAME_CONFIG.colors.bankButton.bottom;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI);
     ctx.fill();
 
     // Black band
-    ctx.fillStyle = GAME_CONFIG.colors.pokeball.band;
+    ctx.fillStyle = GAME_CONFIG.colors.bankButton.band;
     ctx.fillRect(cx - radius, cy - 4, radius * 2, 8);
 
     // Center button outline
-    ctx.fillStyle = GAME_CONFIG.colors.pokeball.band;
+    ctx.fillStyle = GAME_CONFIG.colors.bankButton.band;
     ctx.beginPath();
     ctx.arc(cx, cy, radius * 0.25, 0, Math.PI * 2);
     ctx.fill();
 
     // Center button
-    ctx.fillStyle = GAME_CONFIG.colors.pokeball.button;
+    ctx.fillStyle = GAME_CONFIG.colors.bankButton.button;
     ctx.beginPath();
     ctx.arc(cx, cy, radius * 0.18, 0, Math.PI * 2);
     ctx.fill();
@@ -90,7 +90,7 @@ export function BankButton({ visible, stackCount, onClick }: BankButtonProps) {
     ctx.fill();
 
     // Outline
-    ctx.strokeStyle = GAME_CONFIG.colors.pokeball.band;
+    ctx.strokeStyle = GAME_CONFIG.colors.bankButton.band;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);

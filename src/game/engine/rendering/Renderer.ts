@@ -22,6 +22,8 @@ import { drawBush } from '../../renderer/bush';
 import { GAME_CONFIG } from '../../config';
 import type { BushState } from '../state/GameState';
 import { createAnimalArchetype } from '../../ecs/archetypes';
+import type { ActiveEffectVisual } from '../systems/AbilitySystem';
+import type { ParticleSystem } from '../../effects/ParticleEffects';
 
 const { layout } = GAME_CONFIG;
 
@@ -53,7 +55,9 @@ export class Renderer {
     state: GameStateManager,
     tornado: TornadoState,
     isInvincible: boolean,
-    bushes: BushState[] = []
+    bushes: BushState[] = [],
+    effectVisuals: ActiveEffectVisual[] = [],
+    particles: ParticleSystem | null = null,
   ): void {
     const { ctx, width, height, scale } = this.renderCtx;
 
@@ -71,13 +75,17 @@ export class Renderer {
     this.drawTornado(tornado);
     this.drawEntities(entities, state, isInvincible);
     this.drawPowerUps(entities);
+    this.drawAbilityEffects(effectVisuals);
+    if (particles) {
+      particles.render(ctx);
+    }
     this.drawDangerOverlay(state);
-    
+
     // Debug overlay
     if (this.config.showDebug) {
       this.drawDebug(entities, state);
     }
-    
+
     // End frame
     this.renderCtx.endFrame();
   }
@@ -330,6 +338,365 @@ export class Renderer {
       case 'corn_feed': return 'B';
       case 'lucky_horseshoe': return 'U';
       default: return '?';
+    }
+  }
+
+  /**
+   * Draw ability effect visuals on the canvas
+   */
+  private drawAbilityEffects(effects: ActiveEffectVisual[]): void {
+    if (effects.length === 0) return;
+
+    const { ctx } = this.renderCtx;
+
+    for (const effect of effects) {
+      ctx.save();
+      const alpha = Math.max(0.1, effect.progress);
+
+      switch (effect.type) {
+        case "poop_shot":
+          this.drawPoopShot(ctx, effect, alpha);
+          break;
+        case "egg_bomb":
+          this.drawEggBomb(ctx, effect, alpha);
+          break;
+        case "mud_splash":
+          this.drawMudSplash(ctx, effect, alpha);
+          break;
+        case "wool_shield":
+          this.drawWoolShield(ctx, effect, alpha);
+          break;
+        case "bleat_stun":
+          this.drawBleatStun(ctx, effect, alpha);
+          break;
+        case "honey_trap":
+          this.drawHoneyTrap(ctx, effect, alpha);
+          break;
+        case "crow_call":
+          this.drawCrowCall(ctx, effect, alpha);
+          break;
+        case "hay_platform":
+          this.drawHayPlatform(ctx, effect, alpha);
+          break;
+      }
+
+      ctx.restore();
+    }
+  }
+
+  private drawPoopShot(
+    ctx: CanvasRenderingContext2D,
+    effect: ActiveEffectVisual,
+    alpha: number,
+  ): void {
+    const { x, y, width: size } = effect;
+
+    // Brown projectile with arc trail
+    ctx.globalAlpha = alpha;
+
+    // Trail
+    ctx.strokeStyle = "rgba(101, 67, 33, 0.3)";
+    ctx.lineWidth = size * 0.5;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x - size * 1.5, y + size);
+    ctx.quadraticCurveTo(x - size * 0.5, y - size * 0.5, x, y);
+    ctx.stroke();
+
+    // Projectile body
+    ctx.fillStyle = "#654321";
+    ctx.beginPath();
+    ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Highlight
+    ctx.fillStyle = "rgba(139, 90, 43, 0.8)";
+    ctx.beginPath();
+    ctx.arc(x - size * 0.15, y - size * 0.15, size * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  private drawEggBomb(
+    ctx: CanvasRenderingContext2D,
+    effect: ActiveEffectVisual,
+    alpha: number,
+  ): void {
+    const { x, y, width: diameter } = effect;
+    const radius = diameter / 2;
+    const expandProgress = 1 - effect.progress;
+
+    ctx.globalAlpha = alpha * 0.7;
+
+    // Explosion ring
+    const currentRadius = radius * (0.3 + expandProgress * 0.7);
+    const gradient = ctx.createRadialGradient(x, y, 0, x, y, currentRadius);
+    gradient.addColorStop(0, "rgba(255, 235, 59, 0.8)");
+    gradient.addColorStop(0.5, "rgba(255, 193, 7, 0.5)");
+    gradient.addColorStop(1, "rgba(255, 152, 0, 0)");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(x, y, currentRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Shell fragments
+    ctx.fillStyle = "#FFF8E1";
+    const fragmentCount = 6;
+    for (let i = 0; i < fragmentCount; i++) {
+      const angle = (i / fragmentCount) * Math.PI * 2 + expandProgress * 2;
+      const dist = currentRadius * 0.5 * expandProgress;
+      const fx = x + Math.cos(angle) * dist;
+      const fy = y + Math.sin(angle) * dist;
+      const fragSize = 4 + Math.sin(angle * 3) * 2;
+
+      ctx.save();
+      ctx.translate(fx, fy);
+      ctx.rotate(angle + expandProgress * 3);
+      ctx.fillRect(-fragSize / 2, -fragSize / 4, fragSize, fragSize / 2);
+      ctx.restore();
+    }
+  }
+
+  private drawMudSplash(
+    ctx: CanvasRenderingContext2D,
+    effect: ActiveEffectVisual,
+    alpha: number,
+  ): void {
+    const { x, y, width, height } = effect;
+
+    ctx.globalAlpha = alpha * 0.5;
+
+    // Expanding mud zone
+    const expandFactor = Math.min(1, (1 - effect.progress) * 3 + 0.3);
+    const currentW = width * expandFactor;
+    const currentH = height * expandFactor;
+    const cx = x + width / 2;
+    const cy = y + height / 2;
+
+    // Muddy gradient
+    const gradient = ctx.createRadialGradient(
+      cx, cy, 0,
+      cx, cy, Math.max(currentW, currentH) / 2,
+    );
+    gradient.addColorStop(0, "rgba(101, 67, 33, 0.6)");
+    gradient.addColorStop(0.6, "rgba(139, 90, 43, 0.3)");
+    gradient.addColorStop(1, "rgba(139, 90, 43, 0)");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, currentW / 2, currentH / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Splatter droplets
+    ctx.fillStyle = "rgba(101, 67, 33, 0.4)";
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const dist = (currentW / 2) * 0.8;
+      const dx = cx + Math.cos(angle) * dist;
+      const dy = cy + Math.sin(angle) * dist * 0.5;
+      ctx.beginPath();
+      ctx.arc(dx, dy, 3 + Math.sin(angle * 2) * 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  private drawWoolShield(
+    ctx: CanvasRenderingContext2D,
+    effect: ActiveEffectVisual,
+    alpha: number,
+  ): void {
+    // Wool shield draws around the player; use center of canvas playable area
+    const { width: canvasW, height: canvasH } = this.renderCtx;
+    const cx = canvasW / 2;
+    const floorY = canvasH * layout.floorY;
+
+    ctx.globalAlpha = alpha * 0.35;
+
+    // Fluffy cloud-like shield
+    const shieldRadius = 60 + Math.sin(Date.now() / 200) * 5;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+    ctx.lineWidth = 3;
+
+    // Draw overlapping circles for fluffy look
+    const puffs = 8;
+    for (let i = 0; i < puffs; i++) {
+      const angle = (i / puffs) * Math.PI * 2 + Date.now() / 2000;
+      const puffX = cx + Math.cos(angle) * shieldRadius * 0.7;
+      const puffY = floorY - 30 + Math.sin(angle) * shieldRadius * 0.4;
+      const puffSize = 20 + Math.sin(angle * 2 + Date.now() / 300) * 5;
+      ctx.beginPath();
+      ctx.arc(puffX, puffY, puffSize, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+
+  private drawBleatStun(
+    ctx: CanvasRenderingContext2D,
+    effect: ActiveEffectVisual,
+    alpha: number,
+  ): void {
+    const { x, y, width: diameter } = effect;
+    const radius = diameter / 2;
+    const expandProgress = 1 - effect.progress;
+
+    ctx.globalAlpha = alpha * 0.4;
+
+    // Sound wave rings expanding outward
+    const ringCount = 3;
+    for (let i = 0; i < ringCount; i++) {
+      const ringProgress = (expandProgress + i / ringCount) % 1;
+      const ringRadius = radius * ringProgress;
+      const ringAlpha = 1 - ringProgress;
+
+      ctx.strokeStyle = `rgba(156, 39, 176, ${ringAlpha * 0.6})`;
+      ctx.lineWidth = 3 - ringProgress * 2;
+      ctx.beginPath();
+      ctx.arc(x, y, ringRadius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Center pulse
+    ctx.fillStyle = "rgba(156, 39, 176, 0.2)";
+    ctx.beginPath();
+    ctx.arc(x, y, 15 * (1 - expandProgress * 0.5), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  private drawHoneyTrap(
+    ctx: CanvasRenderingContext2D,
+    effect: ActiveEffectVisual,
+    alpha: number,
+  ): void {
+    const { x, y, width, height } = effect;
+    const catchesRemaining = (effect.extra?.catchesRemaining as number) ?? 0;
+
+    ctx.globalAlpha = alpha * 0.6;
+
+    // Golden sticky puddle
+    const gradient = ctx.createRadialGradient(x, y, 0, x, y, width / 2);
+    gradient.addColorStop(0, "rgba(255, 193, 7, 0.7)");
+    gradient.addColorStop(0.7, "rgba(255, 152, 0, 0.4)");
+    gradient.addColorStop(1, "rgba(255, 152, 0, 0)");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(x, y, width / 2, height / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Sticky drip lines
+    ctx.strokeStyle = "rgba(255, 193, 7, 0.5)";
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+      const angle = (i / 4) * Math.PI * 2 + Date.now() / 1000;
+      const sx = x + Math.cos(angle) * (width / 3);
+      const sy = y + Math.sin(angle) * (height / 3);
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx + Math.cos(angle) * 8, sy + Math.sin(angle) * 8);
+      ctx.stroke();
+    }
+
+    // Remaining catches indicator
+    if (catchesRemaining > 0) {
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "#FFF";
+      ctx.font = "bold 10px 'Fredoka One', cursive";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(catchesRemaining), x, y);
+    }
+  }
+
+  private drawCrowCall(
+    ctx: CanvasRenderingContext2D,
+    effect: ActiveEffectVisual,
+    alpha: number,
+  ): void {
+    const { x } = effect;
+    const { height: canvasH } = this.renderCtx;
+
+    ctx.globalAlpha = alpha * 0.5;
+
+    // Dark bird silhouettes swooping
+    const birdCount = 3;
+    const time = Date.now() / 1000;
+    ctx.fillStyle = "rgba(33, 33, 33, 0.7)";
+
+    for (let i = 0; i < birdCount; i++) {
+      const phase = time * 2 + (i / birdCount) * Math.PI * 2;
+      const birdX = x + Math.sin(phase) * 80;
+      const birdY = canvasH * 0.2 + Math.cos(phase * 0.7 + i) * 60 + i * 40;
+      const wingSpan = 15;
+
+      ctx.save();
+      ctx.translate(birdX, birdY);
+      ctx.rotate(Math.sin(phase) * 0.3);
+
+      // Bird body
+      ctx.beginPath();
+      // Left wing
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-wingSpan * 0.5, -wingSpan * 0.5, -wingSpan, -Math.sin(phase * 3) * 5);
+      // Right wing
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(wingSpan * 0.5, -wingSpan * 0.5, wingSpan, -Math.sin(phase * 3) * 5);
+      ctx.strokeStyle = "rgba(33, 33, 33, 0.7)";
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // Magnetic pull indicator line
+    ctx.strokeStyle = "rgba(33, 33, 33, 0.15)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvasH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  private drawHayPlatform(
+    ctx: CanvasRenderingContext2D,
+    effect: ActiveEffectVisual,
+    alpha: number,
+  ): void {
+    const { x, y, width, height } = effect;
+
+    ctx.globalAlpha = alpha * 0.8;
+
+    // Hay bale platform body
+    ctx.fillStyle = "#D4A017";
+    ctx.strokeStyle = "#B8860B";
+    ctx.lineWidth = 1.5;
+
+    // Rounded rectangle shape
+    const r = height / 3;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + width - r, y);
+    ctx.arcTo(x + width, y, x + width, y + r, r);
+    ctx.lineTo(x + width, y + height - r);
+    ctx.arcTo(x + width, y + height, x + width - r, y + height, r);
+    ctx.lineTo(x + r, y + height);
+    ctx.arcTo(x, y + height, x, y + height - r, r);
+    ctx.lineTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Hay straw lines
+    ctx.strokeStyle = "rgba(139, 90, 43, 0.5)";
+    ctx.lineWidth = 1;
+    const straws = 4;
+    for (let i = 0; i < straws; i++) {
+      const sx = x + (width / (straws + 1)) * (i + 1);
+      ctx.beginPath();
+      ctx.moveTo(sx, y + 2);
+      ctx.lineTo(sx + (Math.sin(i * 1.5) * 3), y + height - 2);
+      ctx.stroke();
     }
   }
 

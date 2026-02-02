@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "com.psyduck.stackgame",
-  appName: "Psyduck Stack",
+  appId: "com.farmfollies.game",
+  appName: "Farm Follies",
   webDir: "dist",
   server: {
     // Enable for development with live reload
@@ -12,7 +12,7 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
-      backgroundColor: "#FCD34D", // Psyduck yellow
+      backgroundColor: "#4A7C59", // Farm green
       showSpinner: false,
       androidScaleType: "CENTER_CROP",
       splashFullScreen: true,
@@ -20,7 +20,7 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       style: "LIGHT",
-      backgroundColor: "#FCD34D",
+      backgroundColor: "#4A7C59",
     },
     ScreenOrientation: {
       // Lock to portrait for the stacking game
@@ -31,17 +31,17 @@ const config: CapacitorConfig = {
     },
     Preferences: {
       // Group name for iOS keychain sharing if needed
-      // group: "com.psyduck.stackgame.shared"
+      // group: "com.farmfollies.game.shared"
     },
   },
   // Android-specific configuration
   android: {
     allowMixedContent: true,
-    backgroundColor: "#FCD34D",
+    backgroundColor: "#4A7C59",
   },
   // iOS-specific configuration  
   ios: {
-    backgroundColor: "#FCD34D",
+    backgroundColor: "#4A7C59",
     contentInset: "automatic",
     preferredContentMode: "mobile",
   },

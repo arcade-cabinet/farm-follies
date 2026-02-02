@@ -62,7 +62,7 @@ src/
     ai/                    # AI systems (YUKA goal-driven)
       GameDirector.ts      # Spawn orchestration, difficulty
       WobbleGovernor.ts    # Stack wobble control
-      DuckBehavior.ts      # Steering behaviors
+      AnimalBehavior.ts    # Steering behaviors
     hooks/                 # React hooks
       useGameEngine.ts     # React-to-engine bridge (imports Game.ts)
     screens/               # React screens
@@ -97,11 +97,11 @@ pnpm check            # Lint + type check combined
 ## Dependencies
 - `@/platform` - Audio feedback abstraction
 - `anime.js` - Animation library (for bush growth)
-- `yuka` - AI library (GameDirector, WobbleGovernor, DuckBehavior)
+- `yuka` - AI library (GameDirector, WobbleGovernor, AnimalBehavior)
 - `tone` - Audio synthesis (dev mode procedural sounds)
 
 ## Known Technical Debt
 1. `src/game/engine/state/GameState.ts` retains legacy state types used by SpawnSystem and AI -- could be consolidated with entity types
-2. `DuckBehavior.ts` retains "Duck" naming (functional, cosmetic issue)
+2. ~~`DuckBehavior.ts` retains "Duck" naming~~ -- RESOLVED: renamed to `AnimalBehavior.ts` with `AnimalBehaviorType`, `AnimalAIState`, `applyAnimalAI()`
 3. Some tests use `as any` casts for partial mocks
 4. Power-up spawning not yet wired into Game.ts

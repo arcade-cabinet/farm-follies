@@ -41,7 +41,7 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     title: "SPECIAL ANIMALS",
     description:
-      "🔥 Fire animals - TAP to shoot fireballs!\n❄️ Ice animals - TAP to freeze falling animals!\nAbilities have cooldowns - watch for the glow!",
+      "🔥 Fire animals - TAP to use fire breath!\n❄️ Ice animals - TAP to freeze falling animals!\nAbilities have cooldowns - watch for the glow!",
     icon: "✨",
     highlight: "Tap special animals to activate powers",
   },

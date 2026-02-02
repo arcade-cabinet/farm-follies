@@ -1,21 +1,23 @@
-# Psyduck's Infinite Headache Tower - Development Log
+# Farm Follies - Development Log
+
+> **Note:** This project was originally themed as "Psyduck Stack" and was rebranded to "Farm Follies" with a complete theme transition to barnyard animals. Historical phases below retain their original context for accuracy, with the understanding that all Psyduck/Pokemon references have since been replaced with farm-themed equivalents.
 
 ## Project Overview
-A tower-stacking game featuring Psyduck characters, built with React, TypeScript, Canvas, and various audio/animation libraries.
+A tower-stacking game featuring barnyard animal characters, built with React, TypeScript, Canvas, and various audio/animation libraries.
 
 ---
 
 ## Evolution Timeline
 
 ### Phase 1: Initial HTML Game
-- Started as a complete HTML file for "Psyduck Stack" game
-- Basic tower stacking with oscillating duck mechanic
-- Click/tap to drop Psyduck onto the tower
+- Started as a complete HTML file for a tower-stacking game
+- Basic tower stacking with oscillating character mechanic
+- Click/tap to drop character onto the tower
 - Simple scoring with perfect landing detection
 
 ### Phase 2: React Integration
 - Migrated to Vite + React + TypeScript project
-- Created monolithic `PsyduckGame.tsx` component
+- Created monolithic game component
 - Basic canvas-based rendering
 - Web Audio API for sound effects
 - Local storage for high scores
@@ -24,8 +26,8 @@ A tower-stacking game featuring Psyduck characters, built with React, TypeScript
 - Separated concerns into proper module structure:
   - `config.ts` - All game constants and tuning
   - `audio.ts` - Sound system
-  - `entities/` - Duck, Particle classes
-  - `renderer/` - Psyduck drawing, background
+  - `entities/` - Entity classes (Animal, Particle)
+  - `renderer/` - Drawing functions
   - `engine/GameEngine.ts` - Core game loop
   - `hooks/` - React integration hooks
   - `components/` - UI components
@@ -34,51 +36,42 @@ A tower-stacking game featuring Psyduck characters, built with React, TypeScript
 - Improved separation of rendering and logic
 
 ### Phase 4: Game Mechanic Redesign
-**Major paradigm shift from "drop duck onto tower" to "drag to catch falling ducks"**
+**Major paradigm shift from "drop character onto tower" to "drag to catch falling animals"**
 
 New Core Mechanics:
-- Player drags Psyduck at bottom to catch ducks falling from ceiling
+- Player drags farmer at bottom to catch animals falling from ceiling
 - Stack builds upward from controlled base
 - Wobble physics - moving causes stack to wobble
 - Tipping point calculation based on center of mass
-- Banking system - save stacks of 5+ ducks for safety
+- Banking system - save stacks of 5+ animals for safety
 
 ### Phase 5: Lives System
 - 3 starting lives, max 5 (can extend to 8)
-- Ducks hitting floor cost a life
+- Animals hitting floor cost a life
 - Earn lives through:
   - 5 consecutive perfect catches
   - Every 500 points
-  - Banking 10+ ducks
-  - Collecting Potion power-up
+  - Banking 10+ animals
+  - Collecting power-ups
 - Invincibility period after losing life
 
 ### Phase 6: Power-Up System
-Added Pokemon-themed collectibles:
-- **Rare Candy** (Pink) - Merges entire stack into one mega Psyduck
-- **Potion** (Purple) - Restores 1 heart
-- **HP Up** (Green) - Increases max hearts + heals
-- **Great Ball** (Blue) - Magnetic pull for 5 seconds
-- **X Attack** (Orange) - Double points for 8 seconds
-- **Full Restore** (Cyan) - Full heal + invincibility
+Added farm-themed collectibles:
+- **Corn Feed** (Pink) - Merges entire stack into one mega animal
+- **Hay Bale** (Purple) - Restores 1 heart
+- **Water Trough** (Blue) - Magnetic pull for 5 seconds
+- **Golden Egg** (Orange) - Double points for 8 seconds
+- **Salt Lick** (Cyan) - Full heal + invincibility
 
-### Phase 7: Special Duck Types
-Three duck varieties with abilities:
-- **Normal Psyduck** (Yellow, 70% spawn)
-  - Standard behavior
-  - Can trigger confusion when poked
-- **Fire Psyduck** (Orange, 15% spawn)
-  - Tap to shoot fireballs in both directions
-  - Destroys falling ducks
-  - 3-second cooldown
-- **Ice Psyduck** (Light blue, 15% spawn)
-  - Tap to freeze nearest falling duck
-  - Frozen duck hangs suspended
-  - 5-second cooldown
+### Phase 7: Special Animal Types
+Animals with abilities:
+- **Normal animals** (85% spawn) - Standard behavior
+- **Fire variant** (8% spawn) - Tap to shoot projectiles and destroy falling animals, 3-second cooldown
+- **Ice variant** (7% spawn) - Tap to freeze nearest falling animal, 5-second cooldown
 
 ### Phase 8: Audio Enhancement
 Integrated Tone.js for:
-- Background music with psychic/mysterious theme
+- Background music with a lively farm theme
 - Dynamic intensity based on game state
 - Proper synthesized sound effects
 
@@ -93,7 +86,7 @@ Balanced wobble mechanics through several rounds:
 - Coin economy (earn coins from scores)
 - 8 permanent upgrades with shop UI
 - Mode selection screen
-- Boss duck entities (Mega, Shadow, Golden)
+- Boss animal entities
 - Mode unlock tracking
 - Achievement system
 
@@ -108,7 +101,7 @@ Balanced wobble mechanics through several rounds:
 
 #### Game Director
 Full AI orchestration system:
-- **Strategic Spawning**: Positions ducks based on player position and current goal
+- **Strategic Spawning**: Positions animals based on player position and current goal
 - **Difficulty Scaling**: Logarithmic curves for level, time, and score
 - **Player Modeling**: Tracks skill, fatigue, frustration, engagement
 - **Goal System**:
@@ -117,7 +110,7 @@ Full AI orchestration system:
   - `challenge` - Push skilled players
   - `mercy` - Help struggling players
   - `reward` - Spawn power-ups for good performance
-- **Duck Behavior Assignment**: Seeker, dive, zigzag, evader, floater
+- **Animal Behavior Assignment**: Seeker, dive, zigzag, evader, floater
 - **Power-Up Intelligence**: Strategic timing and type selection
 
 ### Phase 12: Dev Tooling Upgrade
@@ -127,7 +120,7 @@ Full AI orchestration system:
 - Removed Next.js shims (were only used for next-themes)
 - Simplified theme handling to use Tailwind's native dark mode
 
-### Phase 13: Input & Responsive Overhaul (Current)
+### Phase 13: Input & Responsive Overhaul
 **Major improvements to touch controls and screen size support**
 
 #### Smooth Dragging System
@@ -151,8 +144,8 @@ const momentumDecay = Math.exp(-deltaTime / 120);
 - Reference: iPhone SE portrait (375x667) = scale 1.0
 - Scale range: 0.65 - 1.4
 
-| Device | Width | Scale | Duck Size | Bank Width |
-|--------|-------|-------|-----------|------------|
+| Device | Width | Scale | Animal Size | Bank Width |
+|--------|-------|-------|-------------|------------|
 | iPhone SE | 375px | 1.0 | 70x60 | 65px |
 | Pixel 8a | 412px | 1.10 | 77x66 | 72px |
 | iPad | 768px | 1.4 | 98x84 | 80px |
@@ -164,6 +157,16 @@ const momentumDecay = Math.exp(-deltaTime / 120);
 - Viewport meta with `user-scalable=no, viewport-fit=cover`
 - Safe area inset support for notched devices
 
+### Phase 14: Farm Follies Theme Transition
+**Complete rebrand from Psyduck/Pokemon theme to barnyard farm theme**
+
+- 9 animal types: cow, chicken, pig, sheep, goat, duck, goose, horse, rooster
+- New renderers: animals.ts, farmer.ts, tornado.ts, bush.ts, background.ts
+- Farm-themed power-ups: hay bale, golden egg, water trough, salt lick, corn feed
+- Modular engine rewrite: monolithic GameEngine.ts split into composable systems
+- Entity system: Animal.ts with typed variants replaces Duck.ts
+- Player entity: farmer character replaces Psyduck base character
+
 ---
 
 ## Current Architecture
@@ -173,26 +176,35 @@ src/game/
 ├── ai/
 │   ├── GameDirector.ts      # YUKA-powered game orchestration
 │   ├── WobbleGovernor.ts    # Goal-driven wobble control
-│   └── DuckBehavior.ts      # Duck steering behaviors
+│   └── AnimalBehavior.ts    # Animal steering behaviors
 │
-├── config.ts                # Game constants, duck types, power-ups
+├── config.ts                # Game constants, animal types, power-ups
 ├── audio.ts                 # Tone.js audio system
 ├── achievements.ts          # Achievement tracking
 │
-├── entities/
-│   ├── Duck.ts              # Psyduck entity (normal, fire, ice)
-│   ├── Particle.ts          # Visual particles
-│   ├── PowerUp.ts           # Collectible power-ups
-│   ├── Fireball.ts          # Fire duck projectile
-│   ├── FrozenDuck.ts        # Ice-encased duck
-│   └── BossDuck.ts          # Boss variants
+├── engine/
+│   ├── Game.ts              # Modular game orchestrator
+│   ├── GameLoop.ts          # rAF with fixed timestep
+│   ├── systems/             # Pure function systems (Ability, Collision, Wobble, Score, Spawn, Movement, Bush)
+│   ├── entities/
+│   │   ├── Entity.ts        # Base entity
+│   │   ├── Animal.ts        # Animal entity (9 types with variants)
+│   │   ├── Player.ts        # Farmer entity
+│   │   └── PowerUp.ts       # Collectible power-ups
+│   └── managers/
+│       ├── EntityManager.ts # Entity lifecycle
+│       └── GameStateManager.ts # Game state
 │
 ├── renderer/
-│   ├── psyduck.ts           # Duck drawing (all types)
-│   └── background.ts        # Background, platform, zones
+│   ├── animals.ts           # Animal drawing (all 9 types)
+│   ├── farmer.ts            # Farmer character
+│   ├── tornado.ts           # Tornado effects
+│   ├── bush.ts              # Bush decorations
+│   └── background.ts        # Farm background
 │
-├── engine/
-│   └── GameEngine.ts        # Core game loop, physics, collision, scaling
+├── ecs/
+│   ├── archetypes.ts        # Animal archetype definitions
+│   └── types.ts             # ECS component and entity types
 │
 ├── hooks/
 │   ├── useGameEngine.ts     # React integration
@@ -233,15 +245,15 @@ physics: {
   wobbleSpringiness: 0.08,    // Softer snap-back
   stackStability: 0.72,       // Visible but manageable
   impactWobble: 0.025,        // Gentler landings
-  
+
   aiWobble: {
-    seekerImpact: 0.015,      // AI ducks add tension
+    seekerImpact: 0.015,      // AI animals add tension
     diveImpact: 0.025,        // Divers hit harder
     evaderImpact: 0.008,      // Sneaky contribution
     swarmBonus: 0.005,        // Multiple threats compound
     maxAIWobble: 0.08,        // Cap on AI influence
   },
-  
+
   tipping: {
     criticalAngleBase: 0.58,  // More forgiving
     heightPenalty: 0.007,     // Height matters less
@@ -274,17 +286,16 @@ physics: {
 
 ### Features to Consider
 1. Leaderboard with backend
-2. More Psyduck variants (Shiny, evolutions)
+2. More animal variants (seasonal, rare)
 3. Seasonal events/themes
 4. PWA offline support
 5. Social sharing (GIF replays)
 6. Daily challenges
 
 ### Technical Debt
-1. GameEngine.ts is large (~1800 lines)
-2. Could extract ResponsiveScale to separate module
-3. No error boundaries
-4. Could use OffscreenCanvas for performance
+1. Could extract ResponsiveScale to separate module
+2. No error boundaries
+3. Could use OffscreenCanvas for performance
 
 ---
 
@@ -320,9 +331,9 @@ pnpm build
 ## Testing Checklist
 
 ### Gameplay
-- [x] Can catch falling ducks consistently
+- [x] Can catch falling animals consistently
 - [x] Stack doesn't topple with gentle movement
-- [x] Special duck abilities work (fire/ice)
+- [x] Special animal abilities work
 - [x] Power-ups spawn and can be collected
 - [x] Banking works correctly
 - [x] Lives system functions (lose/earn)
@@ -347,4 +358,4 @@ pnpm build
 
 ---
 
-*Last updated: Input & Responsive Overhaul (smooth dragging, responsive scaling)*
+*Last updated: Farm Follies theme transition complete*

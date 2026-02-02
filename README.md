@@ -1,17 +1,17 @@
-# Psyduck's Infinite Headache Tower
+# Farm Follies
 
-A physics-based tower-stacking arcade game featuring everyone's favorite confused duck Pokemon. Catch falling Psyducks, build impossible towers, and try not to let your stack topple!
+A physics-based tower-stacking arcade game set on a barnyard farm. Catch falling animals, build impossible towers, and try not to let your stack topple!
 
 **Cross-platform:** Web, Android, iOS, and Desktop (Electron)
 
 ## Play
 
-Drag your Psyduck to catch falling ducks and build the tallest tower possible. But be careful - move too fast and your tower will wobble and fall!
+Drag your farmer to catch falling animals and build the tallest tower possible. But be careful - move too fast and your tower will wobble and fall!
 
 ### Controls
-- **Drag** - Move your Psyduck left/right to catch falling ducks
-- **Tap stacked duck** - Trigger special abilities (Fire/Ice ducks)
-- **Pokeball button** - Bank your stack to safety
+- **Drag** - Move your farmer left/right to catch falling animals
+- **Tap stacked animal** - Trigger special abilities
+- **Bank button** - Bank your stack to safety
 
 ## Features
 
@@ -23,7 +23,7 @@ Drag your Psyduck to catch falling ducks and build the tallest tower possible. B
 
 ### Responsive Design
 - **Fully playable on any device** - iPhone SE to iPad to desktop
-- Automatic scaling of duck size, UI, and hit detection
+- Automatic scaling of animal size, UI, and hit detection
 - More forgiving catch zones on smaller screens
 - Touch-optimized controls on mobile
 
@@ -32,26 +32,33 @@ Drag your Psyduck to catch falling ducks and build the tallest tower possible. B
 - Stack stability decreases with height
 - Center of mass calculations for tipping
 
-### Special Ducks
-- **Normal Psyduck** (Yellow) - The classic confused duck
-- **Fire Psyduck** (Orange) - Tap to shoot fireballs and destroy falling ducks
-- **Ice Psyduck** (Blue) - Tap to freeze ducks mid-air
+### Animal Types
+Nine barnyard animals fall from the sky, each with unique shapes and personalities:
+- **Cow** - Large and sturdy
+- **Chicken** - Small and quick
+- **Pig** - Round and bouncy
+- **Sheep** - Fluffy and light
+- **Goat** - Nimble climber
+- **Duck** - Classic barnyard quacker
+- **Goose** - Long-necked troublemaker
+- **Horse** - Tall and heavy
+- **Rooster** - Proud and loud
 
 ### Power-Ups
-- **Rare Candy** - Merge your entire stack into one mega duck
-- **Potion** - Restore hearts
-- **Great Ball** - Magnetic pull attracts ducks toward you
-- **X Attack** - Double points for 8 seconds
-- **Full Restore** - Full heal + temporary invincibility
+- **Hay Bale** - Extra life
+- **Golden Egg** - Double points
+- **Water Trough** - Magnetic pull attracts animals toward you
+- **Salt Lick** - Full restore + temporary invincibility
+- **Corn Feed** - Merge your entire stack into one mega animal
 
 ### Intelligent AI Director
 The game features a YUKA-powered AI that adapts to your skill:
 - Struggling? The game shows mercy with easier spawns
-- Doing well? Expect more challenging duck patterns
+- Doing well? Expect more challenging animal patterns
 - Logarithmic difficulty scaling feels fair at all skill levels
 
 ### Audio & Haptics
-- Original synthesized soundtrack with a psychic/mysterious theme
+- Original synthesized soundtrack with a lively farm theme
 - Dynamic music intensity based on gameplay
 - Satisfying sound effects for every action
 - Haptic feedback on native platforms (land, perfect catch, game over)
@@ -154,8 +161,8 @@ ffmpeg -i input.wav -c:a libvorbis -q:a 6 output.ogg
 │   ├── game/           # Game logic
 │   │   ├── ai/         # YUKA-powered AI (GameDirector, WobbleGovernor)
 │   │   ├── engine/     # Core game loop, physics, responsive scaling
-│   │   ├── entities/   # Duck, PowerUp, Fireball, etc.
-│   │   ├── renderer/   # Canvas drawing functions
+│   │   ├── ecs/        # Entity Component System types and archetypes
+│   │   ├── renderer/   # Canvas drawing functions (animals, farmer, tornado, bush, background)
 │   │   ├── hooks/      # React integration
 │   │   ├── components/ # UI components
 │   │   ├── screens/    # Menu, Game, GameOver
@@ -181,20 +188,19 @@ ffmpeg -i input.wav -c:a libvorbis -q:a 6 output.ogg
 ### Scoring
 | Action | Points |
 |--------|--------|
-| Catch duck | 10 × stack multiplier |
-| Perfect catch | ×2.5 bonus |
+| Catch animal | 10 x stack multiplier |
+| Perfect catch | x2.5 bonus |
 | Combo chain | +15% per catch |
-| Fireball kill | 25 points |
 
 ### Lives
 - Start with 3 lives (max 5, can extend to 8)
-- Lose a life when ducks hit the floor or stack topples
+- Lose a life when animals hit the floor or stack topples
 - Earn lives through perfect catches, score milestones, and power-ups
 
 ### Banking
-When you have 5+ ducks stacked, bank them to safety:
-- Banked ducks are protected from topples
-- Banking 10+ ducks earns a bonus life
+When you have 5+ animals stacked, bank them to safety:
+- Banked animals are protected from topples
+- Banking 10+ animals earns a bonus life
 - Trade-off: Your multiplier is reduced by 40%
 
 ## Documentation
@@ -205,8 +211,8 @@ When you have 5+ ducks stacked, bank them to safety:
 
 ## Credits
 
-Built with React, TypeScript, Capacitor, and a lot of confused duck energy.
+Built with React, TypeScript, Capacitor, and a lot of barnyard chaos.
 
 ---
 
-*Stack responsibly. Psyduck's headache is not responsible for toppled towers.*
+*Stack responsibly. The farmer is not responsible for toppled towers.*

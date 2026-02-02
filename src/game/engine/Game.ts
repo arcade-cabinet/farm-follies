@@ -56,9 +56,13 @@ import {
   getMudSlowFactor,
   checkHayPlatformBounce,
   getAbilityIndicators,
+  getActiveEffectVisuals,
   type AbilitySystemState,
   type AbilityIndicator as AbilityIndicatorData,
 } from './systems/AbilitySystem';
+
+// Particle effects
+import { ParticleSystem } from '../effects/ParticleEffects';
 
 // AI
 import { updateTornadoState, type TornadoState } from '../renderer/tornado';
@@ -111,6 +115,9 @@ export class Game {
   // Bushes
   private bushRuntime: BushRuntimeState;
 
+  // Particles
+  private particleSystem: ParticleSystem;
+
   // Callbacks
   private callbacks: GameCallbacks;
   
@@ -159,6 +166,9 @@ export class Game {
     // Initialize bushes
     this.bushRuntime = createBushRuntimeState();
 
+    // Initialize particles
+    this.particleSystem = new ParticleSystem();
+
     // Initialize input
     this.input = new InputManager(canvas, {
       onDragMove: this.handleDragMove.bind(this),
@@ -188,6 +198,7 @@ export class Game {
     this.wobbleState = createStackWobbleState();
     this.abilityState = createAbilitySystemState();
     this.bushRuntime = createBushRuntimeState();
+    this.particleSystem.clear();
     this.tornadoState = this.createInitialTornadoState();
     this.gameDirector = new GameDirector();
     
@@ -573,7 +584,10 @@ export class Game {
     
     // Update renderer effects
     this.renderer.update(dt);
-    
+
+    // Update particles
+    this.particleSystem.update(dt);
+
     // Update input
     this.input.update(dt);
     
@@ -590,13 +604,18 @@ export class Game {
   private render(_alpha: number): void {
     const player = this.entities.get<PlayerEntity>('player');
     const invincible = player ? isInvincible(player) : false;
-    
+
+    // Gather active ability effect visuals
+    const effectVisuals = getActiveEffectVisuals(this.abilityState);
+
     this.renderer.render(
       this.entities,
       this.gameState,
       this.tornadoState,
       invincible,
-      this.activeBushes
+      this.activeBushes,
+      effectVisuals,
+      this.particleSystem,
     );
   }
 
@@ -833,12 +852,26 @@ export class Game {
             animal.transform.position.y,
           );
           feedback.play("perfect");
+          // Perfect catch particles
+          this.particleSystem.emit(
+            "perfect",
+            animal.transform.position.x + (animal.bounds?.width ?? 50) / 2,
+            animal.transform.position.y + (animal.bounds?.height ?? 50) / 2,
+          );
         } else if (isGood) {
           this.callbacks.onGoodCatch?.(
             animal.transform.position.x,
             animal.transform.position.y,
           );
         }
+
+        // Small confetti burst for every catch
+        this.particleSystem.emit(
+          "coinCollect",
+          animal.transform.position.x + (animal.bounds?.width ?? 50) / 2,
+          animal.transform.position.y + (animal.bounds?.height ?? 50) / 2,
+          { count: 6 },
+        );
 
         feedback.play("land");
 
@@ -1064,6 +1097,11 @@ export class Game {
 
   private applyPowerUp(type: PowerUpType, player: PlayerEntity): void {
     feedback.play("perfect");
+
+    // Emit sparkle burst at player position for power-up collection
+    const playerCX = getPlayerCenterX(player);
+    const playerY = player.transform.position.y;
+    this.particleSystem.emit("powerUp", playerCX, playerY);
 
     switch (type) {
       case "hay_bale": {

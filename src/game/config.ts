@@ -13,7 +13,7 @@ export const GAME_INFO = {
 // Animal types for spawning
 export type AnimalType = 'cow' | 'chicken' | 'pig' | 'sheep' | 'goat' | 'duck' | 'goose' | 'horse' | 'rooster';
 
-// Power-up types (farm-themed + legacy Pokemon-themed for backwards compat)
+// Power-up types (farm-themed + legacy aliases for backwards compat)
 export type PowerUpType =
   | "hay_bale"      // Extra life (farm)
   | "golden_egg"    // Double points (farm)
@@ -129,7 +129,7 @@ export const POWER_UPS = {
     spawnWeight: 0.08,
     glowColor: '#C0C0C0',
   },
-  // Legacy Pokemon-themed names (aliased to farm equivalents)
+  // Legacy names (aliased to farm equivalents)
   potion: {
     name: "Hay Bale",
     description: "Restore one heart",
@@ -363,8 +363,8 @@ export const GAME_CONFIG = {
       decayTime: 15000,   // Time before bush shrinks (ms)
     },
     
-    // Legacy fireball physics
-    fireball: {
+    // Ability projectile physics (fire breath, etc.)
+    projectile: {
       speed: 8,
       size: 20,
       duration: 3000,
@@ -509,7 +509,7 @@ export const GAME_CONFIG = {
     swayAmount: 30,
   },
 
-  // Legacy color reference (for compatibility)
+  // Color reference (for UI components)
   colors: {
     background: {
       primary: FARM_COLORS.sky.storm,
@@ -522,23 +522,23 @@ export const GAME_CONFIG = {
     warning: FARM_COLORS.ui.warning,
     heart: FARM_COLORS.ui.heart,
     heartEmpty: FARM_COLORS.ui.heartEmpty,
-    // Legacy Psyduck colors for backward compat
+    // Duck animal colors (used by PeekingAnimal)
     duck: {
       body: FARM_COLORS.animals.duck.body,
       beak: FARM_COLORS.animals.duck.beak,
       feet: FARM_COLORS.animals.duck.feet,
       outline: '#8B7355',
     },
-    fireDuck: {
+    fireAnimal: {
       body: '#FF7043',
       beak: '#FFAB91',
     },
-    iceDuck: {
+    iceAnimal: {
       body: '#4FC3F7',
       beak: '#B3E5FC',
     },
     // Bank button (barn-themed)
-    pokeball: {
+    bankButton: {
       top: FARM_COLORS.barn.red,
       bottom: FARM_COLORS.barn.wood,
       band: FARM_COLORS.ui.text,
@@ -576,7 +576,7 @@ export const ANIMAL_TYPE_CONFIGS = {
   },
   fire: {
     spawnWeight: 0.08,
-    ability: 'fireball',
+    ability: 'fire_breath',
     abilityCooldown: 3000,
     colors: {
       body: '#FF7043',

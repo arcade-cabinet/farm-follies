@@ -452,7 +452,7 @@ function drawSheep(ctx: DrawContext, archetype: AnimalArchetype): void {
 }
 
 /**
- * Draw a duck (the actual duck, not Psyduck!)
+ * Draw a duck (barnyard duck)
  */
 function drawDuck(ctx: DrawContext, archetype: AnimalArchetype): void {
   const { ctx: c, x, y, width: w, height: h, isStressed, isConfused } = ctx;

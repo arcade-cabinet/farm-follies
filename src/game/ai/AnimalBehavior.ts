@@ -1,12 +1,12 @@
 /**
- * Duck AI Behavior System
- * Smart steering behaviors for falling ducks
+ * Animal AI Behavior System
+ * Smart steering behaviors for falling animals
  */
 
 /**
- * Behavior types for falling ducks
+ * Behavior types for falling animals
  */
-export type DuckBehaviorType =
+export type AnimalBehaviorType =
   | "normal" // Falls straight down with slight drift
   | "seeker" // Actively seeks the player
   | "evader" // Tries to avoid the player
@@ -15,21 +15,21 @@ export type DuckBehaviorType =
   | "dive" // Fast dive at player
   | "floater"; // Slow, drifting fall
 
-export interface DuckAIState {
+export interface AnimalAIState {
   x: number;
   y: number;
   vx: number;
   vy: number;
   targetX: number;
   targetY: number;
-  behaviorType: DuckBehaviorType;
+  behaviorType: AnimalBehaviorType;
 }
 
 /**
  * Get a random behavior type based on level
  * Higher levels have more aggressive behaviors
  */
-export function getRandomBehavior(level: number): DuckBehaviorType {
+export function getRandomBehavior(level: number): AnimalBehaviorType {
   const rand = Math.random();
 
   // Base probabilities that increase with level
@@ -66,10 +66,10 @@ export function getRandomBehavior(level: number): DuckBehaviorType {
 }
 
 /**
- * Apply AI behavior to duck position
+ * Apply AI behavior to animal position
  */
-export function applyDuckAI(
-  state: DuckAIState,
+export function applyAnimalAI(
+  state: AnimalAIState,
   deltaTime: number,
   screenWidth: number
 ): { x: number; y: number; vx: number; vy: number } {
@@ -170,7 +170,7 @@ export function applyDuckAI(
 /**
  * Get behavior display info for UI
  */
-export function getBehaviorInfo(type: DuckBehaviorType): { name: string; color: string } {
+export function getBehaviorInfo(type: AnimalBehaviorType): { name: string; color: string } {
   switch (type) {
     case "seeker":
       return { name: "Seeker", color: "#F44336" };

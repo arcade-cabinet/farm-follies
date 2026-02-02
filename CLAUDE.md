@@ -88,7 +88,7 @@ Renderers (src/game/renderer/)
 AI (YUKA goal-driven, src/game/ai/)
   GameDirector.ts       (spawn orchestration, difficulty, player modeling)
   WobbleGovernor.ts     (stack wobble control: steady/pulse/mercy/chaos)
-  DuckBehavior.ts       (7 steering behaviors: seeker, evader, zigzag, etc.)
+  AnimalBehavior.ts     (7 steering behaviors: seeker, evader, zigzag, etc.)
 
 Input
   InputManager.ts (unified mouse/touch with frame-rate-independent drag)

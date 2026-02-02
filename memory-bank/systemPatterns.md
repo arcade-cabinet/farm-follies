@@ -30,7 +30,7 @@ The game uses a clean modular architecture with clear separation of concerns:
 |    farmer.ts                                         |
 +-----------------------------------------------------+
 |  AI (YUKA goal-driven)                               |
-|    GameDirector     WobbleGovernor    DuckBehavior   |
+|    GameDirector     WobbleGovernor    AnimalBehavior |
 +-----------------------------------------------------+
 ```
 

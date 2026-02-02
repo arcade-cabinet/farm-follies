@@ -15,7 +15,7 @@
 
 import { GameEntity, GoalEvaluator, Think } from "yuka";
 import type { AnimalTypeConfig, PowerUpType } from "../config";
-import type { DuckBehaviorType } from "./DuckBehavior";
+import type { AnimalBehaviorType } from "./AnimalBehavior";
 
 /**
  * Spawn decision from the director
@@ -24,7 +24,7 @@ export interface SpawnDecision {
   shouldSpawn: boolean;
   x: number;
   animalType: AnimalTypeConfig;
-  behaviorType: DuckBehaviorType;
+  behaviorType: AnimalBehaviorType;
   initialVelocityX: number;
   initialVelocityY: number;
   targetBias: number; // How much to aim at player (0-1)
@@ -440,7 +440,7 @@ export class GameDirector extends GameEntity {
   /**
    * Choose AI behavior type based on difficulty and strategy
    */
-  private chooseBehaviorType(): DuckBehaviorType {
+  private chooseBehaviorType(): AnimalBehaviorType {
     const roll = Math.random();
 
     // Difficulty affects behavior distribution
