@@ -1,23 +1,23 @@
 import { describe, expect, it } from "vitest";
+import type { BushState, ProjectileState } from "../state/GameState";
 import {
-  DEFAULT_BUSH_CONFIG,
-  createBushFromPoop,
-  createBushVisualState,
-  createBushRuntimeState,
+  addBushToState,
+  applyBushBounce,
+  type BushConfig,
+  calculateBushOpacity,
   createBounceLeaves,
+  createBushFromPoop,
+  createBushRuntimeState,
+  createBushVisualState,
+  DEFAULT_BUSH_CONFIG,
+  findNearbyBushes,
+  getActiveBushes,
+  removeBushFromState,
+  shouldRemoveBush,
+  updateAllBushes,
   updateBushGrowth,
   updateBushVisual,
-  applyBushBounce,
-  shouldRemoveBush,
-  calculateBushOpacity,
-  updateAllBushes,
-  addBushToState,
-  removeBushFromState,
-  getActiveBushes,
-  findNearbyBushes,
-  type BushConfig,
 } from "../systems/BushSystem";
-import type { BushState, ProjectileState } from "../state/GameState";
 
 // Helper to create a mock projectile
 function mockProjectile(overrides: Partial<ProjectileState> = {}): ProjectileState {
@@ -261,7 +261,10 @@ describe("BushSystem", () => {
 
   describe("updateAllBushes", () => {
     it("updates all bushes in array", () => {
-      const bushes = [mockBush({ id: "b1", growthStage: 0 }), mockBush({ id: "b2", growthStage: 0 })];
+      const bushes = [
+        mockBush({ id: "b1", growthStage: 0 }),
+        mockBush({ id: "b2", growthStage: 0 }),
+      ];
       const updated = updateAllBushes(bushes, 500);
       expect(updated[0].growthStage).toBeGreaterThan(0);
       expect(updated[1].growthStage).toBeGreaterThan(0);

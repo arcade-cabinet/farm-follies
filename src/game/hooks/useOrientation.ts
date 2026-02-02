@@ -17,20 +17,20 @@ export function useOrientation(): Orientation {
 
   useEffect(() => {
     const update = () => {
-      setOrientation(
-        window.innerWidth > window.innerHeight ? "landscape" : "portrait"
-      );
+      setOrientation(window.innerWidth > window.innerHeight ? "landscape" : "portrait");
+    };
+
+    const handleOrientationChange = () => {
+      // Delay to let the browser finish rotating
+      setTimeout(update, 100);
     };
 
     window.addEventListener("resize", update);
-    window.addEventListener("orientationchange", () => {
-      // Delay to let the browser finish rotating
-      setTimeout(update, 100);
-    });
+    window.addEventListener("orientationchange", handleOrientationChange);
 
     return () => {
       window.removeEventListener("resize", update);
-      window.removeEventListener("orientationchange", update);
+      window.removeEventListener("orientationchange", handleOrientationChange);
     };
   }, []);
 

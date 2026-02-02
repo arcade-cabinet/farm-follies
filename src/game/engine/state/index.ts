@@ -4,4 +4,4 @@
  */
 
 // Game state types and factories
-export * from './GameState';
+export * from "./GameState";

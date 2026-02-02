@@ -1,6 +1,12 @@
 /**
  * useHighScore Hook
  * Manages high score persistence with localStorage
+ *
+ * TODO: Migrate to platform storage abstraction (src/platform/storage.ts)
+ * instead of raw localStorage. The platform storage API is async, so this
+ * hook would need to handle async initialization (e.g., load from storage
+ * in useEffect and show a loading state). This ensures Capacitor Preferences
+ * are used on native platforms.
  */
 
 import { useCallback, useEffect, useState } from "react";

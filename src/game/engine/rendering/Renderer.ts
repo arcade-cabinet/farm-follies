@@ -1,29 +1,28 @@
 /**
  * Renderer - Main rendering orchestrator
- * 
+ *
  * Delegates to specific renderers for different entity types
  */
 
-import { RenderContext } from './RenderContext';
-import { EntityManager } from '../managers/EntityManager';
-import { GameStateManager } from '../managers/GameStateManager';
-import type { ScaleFactors } from '../core/ResponsiveScale';
-import type { PlayerEntity } from '../entities/Player';
-import type { AnimalEntity } from '../entities/Animal';
-import type { PowerUpEntity } from '../entities/PowerUp';
-import { getPowerUpBobOffset } from '../entities/PowerUp';
-
+import { GAME_CONFIG } from "../../config";
+import { createAnimalArchetype } from "../../ecs/archetypes";
+import type { ParticleSystem } from "../../effects/ParticleEffects";
+import { drawAnimal } from "../../renderer/animals";
 // Import actual renderer functions
-import { drawBackground } from '../../renderer/background';
-import { drawAnimal } from '../../renderer/animals';
-import { drawFarmerBase } from '../../renderer/farmer';
-import { drawTornado, drawTornadoRail, type TornadoState } from '../../renderer/tornado';
-import { drawBush } from '../../renderer/bush';
-import { GAME_CONFIG } from '../../config';
-import type { BushState } from '../state/GameState';
-import { createAnimalArchetype } from '../../ecs/archetypes';
-import type { ActiveEffectVisual } from '../systems/AbilitySystem';
-import type { ParticleSystem } from '../../effects/ParticleEffects';
+import { drawBackground } from "../../renderer/background";
+import { drawBush } from "../../renderer/bush";
+import { drawFarmerBase } from "../../renderer/farmer";
+import { drawTornado, drawTornadoRail, type TornadoState } from "../../renderer/tornado";
+import type { ScaleFactors } from "../core/ResponsiveScale";
+import type { AnimalEntity } from "../entities/Animal";
+import type { PlayerEntity } from "../entities/Player";
+import type { PowerUpEntity } from "../entities/PowerUp";
+import { getPowerUpBobOffset } from "../entities/PowerUp";
+import type { EntityManager } from "../managers/EntityManager";
+import type { GameStateManager } from "../managers/GameStateManager";
+import type { BushState } from "../state/GameState";
+import type { ActiveEffectVisual } from "../systems/AbilitySystem";
+import type { RenderContext } from "./RenderContext";
 
 const { layout } = GAME_CONFIG;
 
@@ -57,7 +56,7 @@ export class Renderer {
     isInvincible: boolean,
     bushes: BushState[] = [],
     effectVisuals: ActiveEffectVisual[] = [],
-    particles: ParticleSystem | null = null,
+    particles: ParticleSystem | null = null
   ): void {
     const { ctx, width, height, scale } = this.renderCtx;
 
@@ -121,37 +120,37 @@ export class Renderer {
   private drawBankZone(state: GameStateManager): void {
     const { ctx, width, height, scale } = this.renderCtx;
     const gameState = state.getState();
-    
+
     // Bank zone background
-    ctx.fillStyle = 'rgba(233, 30, 99, 0.12)';
+    ctx.fillStyle = "rgba(233, 30, 99, 0.12)";
     ctx.fillRect(width - scale.bankWidth, 0, scale.bankWidth, height);
-    
+
     // Bank zone border
-    ctx.strokeStyle = 'rgba(233, 30, 99, 0.35)';
+    ctx.strokeStyle = "rgba(233, 30, 99, 0.35)";
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(width - scale.bankWidth, 0);
     ctx.lineTo(width - scale.bankWidth, height);
     ctx.stroke();
-    
+
     // Banked count
     if (gameState.bankedAnimals > 0) {
-      ctx.fillStyle = '#FFF';
+      ctx.fillStyle = "#FFF";
       const fontSize = Math.max(18, Math.min(28, scale.bankWidth * 0.45));
       ctx.font = `bold ${fontSize}px 'Fredoka One', cursive`;
-      ctx.textAlign = 'center';
+      ctx.textAlign = "center";
       ctx.fillText(String(gameState.bankedAnimals), width - scale.bankWidth / 2, height / 2);
       ctx.font = `${fontSize * 0.4}px 'Fredoka One', cursive`;
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.fillText('SAFE', width - scale.bankWidth / 2, height / 2 + fontSize * 0.65);
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.fillText("SAFE", width - scale.bankWidth / 2, height / 2 + fontSize * 0.65);
     }
   }
 
   private drawFloorZone(): void {
     const { ctx, width, height, scale } = this.renderCtx;
     const floorY = height * layout.floorY;
-    
-    ctx.strokeStyle = 'rgba(255, 193, 7, 0.4)';
+
+    ctx.strokeStyle = "rgba(255, 193, 7, 0.4)";
     ctx.lineWidth = 3;
     ctx.setLineDash([15, 10]);
     ctx.beginPath();
@@ -159,8 +158,8 @@ export class Renderer {
     ctx.lineTo(width - scale.bankWidth, floorY + scale.entityHeight / 2);
     ctx.stroke();
     ctx.setLineDash([]);
-    
-    ctx.fillStyle = 'rgba(255, 193, 7, 0.05)';
+
+    ctx.fillStyle = "rgba(255, 193, 7, 0.05)";
     ctx.fillRect(0, floorY + scale.entityHeight / 2, width - scale.bankWidth, height);
   }
 
@@ -186,7 +185,7 @@ export class Renderer {
     const { ctx, width, height, scale } = this.renderCtx;
     const { tornado: tornadoConfig } = GAME_CONFIG;
     const railY = height * layout.tornadoRailY;
-    
+
     drawTornadoRail(ctx, width - scale.bankWidth, railY, tornado.x);
     drawTornado(ctx, tornado.x, railY + 30, {
       width: tornadoConfig.width,
@@ -205,15 +204,15 @@ export class Renderer {
   ): void {
     const { ctx, scale } = this.renderCtx;
     const gameState = state.getState();
-    
+
     // Get player
-    const player = entities.get<PlayerEntity>('player');
-    
+    const player = entities.get<PlayerEntity>("player");
+
     // Draw player (farmer)
     if (player) {
       this.renderCtx.withInvincibilityFlicker(isInvincible, () => {
         const { position } = player.transform;
-        
+
         drawFarmerBase(
           ctx,
           position.x + (player.bounds?.width ?? 80) / 2,
@@ -222,22 +221,22 @@ export class Renderer {
           player.bounds?.height ?? 100,
           player.player.wobbleOffset
         );
-        
+
         // Draw stacked animals
         for (const animal of player.player.stack) {
           this.drawAnimal(animal, gameState.inDangerState ? 0.5 : 0);
         }
       });
     }
-    
+
     // Draw falling animals
-    const fallingAnimals = entities.getByType<AnimalEntity>('animal');
+    const fallingAnimals = entities.getByType<AnimalEntity>("animal");
     for (const animal of fallingAnimals) {
-      if (animal.animal.state === 'falling') {
+      if (animal.animal.state === "falling") {
         this.drawAnimal(animal, 0);
       }
     }
-    
+
     // Draw hitboxes in debug mode
     if (this.config.showHitboxes) {
       this.drawHitboxes(entities);
@@ -248,19 +247,19 @@ export class Renderer {
     const { ctx } = this.renderCtx;
     const { position, rotation } = animal.transform;
     const { animalType, variant, wobbleAngle, abilityReady } = animal.animal;
-    
+
     // Get archetype for rendering (from ECS archetypes)
-    const isSpecial = variant !== 'white' && variant !== 'common' && variant !== 'normal';
-    const archetype = createAnimalArchetype(animalType as any, isSpecial);
+    const isSpecial = variant !== "white" && variant !== "common" && variant !== "normal";
+    const archetype = createAnimalArchetype(animalType, isSpecial);
     if (!archetype) return;
-    
+
     ctx.save();
     ctx.translate(
       position.x + (animal.bounds?.width ?? 50) / 2,
       position.y + (animal.bounds?.height ?? 50) / 2
     );
     ctx.rotate(rotation + wobbleAngle);
-    
+
     drawAnimal(
       ctx,
       0, // x offset (already translated)
@@ -273,13 +272,13 @@ export class Renderer {
       stress > 0.8,
       abilityReady
     );
-    
+
     ctx.restore();
   }
 
   private drawPowerUps(entities: EntityManager): void {
     const { ctx } = this.renderCtx;
-    const powerUps = entities.getByType<PowerUpEntity>('powerup');
+    const powerUps = entities.getByType<PowerUpEntity>("powerup");
 
     for (const powerUp of powerUps) {
       const { position } = powerUp.transform;
@@ -310,7 +309,7 @@ export class Renderer {
 
       // White highlight
       ctx.globalAlpha = 0.5;
-      ctx.fillStyle = '#FFF';
+      ctx.fillStyle = "#FFF";
       ctx.beginPath();
       ctx.arc(cx - size * 0.15, cy - size * 0.15, size * 0.2, 0, Math.PI * 2);
       ctx.fill();
@@ -318,10 +317,10 @@ export class Renderer {
       // Icon text (first letter of name)
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
-      ctx.fillStyle = '#FFF';
+      ctx.fillStyle = "#FFF";
       ctx.font = `bold ${size * 0.5}px 'Fredoka One', cursive`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
       const icon = this.getPowerUpIcon(powerUp.powerup.powerUpType);
       ctx.fillText(icon, cx, cy);
 
@@ -331,13 +330,20 @@ export class Renderer {
 
   private getPowerUpIcon(type: string): string {
     switch (type) {
-      case 'hay_bale': return '+';
-      case 'golden_egg': return '2x';
-      case 'water_trough': return 'M';
-      case 'salt_lick': return 'F';
-      case 'corn_feed': return 'B';
-      case 'lucky_horseshoe': return 'U';
-      default: return '?';
+      case "hay_bale":
+        return "+";
+      case "golden_egg":
+        return "2x";
+      case "water_trough":
+        return "M";
+      case "salt_lick":
+        return "F";
+      case "corn_feed":
+        return "B";
+      case "lucky_horseshoe":
+        return "U";
+      default:
+        return "?";
     }
   }
 
@@ -387,7 +393,7 @@ export class Renderer {
   private drawPoopShot(
     ctx: CanvasRenderingContext2D,
     effect: ActiveEffectVisual,
-    alpha: number,
+    alpha: number
   ): void {
     const { x, y, width: size } = effect;
 
@@ -419,7 +425,7 @@ export class Renderer {
   private drawEggBomb(
     ctx: CanvasRenderingContext2D,
     effect: ActiveEffectVisual,
-    alpha: number,
+    alpha: number
   ): void {
     const { x, y, width: diameter } = effect;
     const radius = diameter / 2;
@@ -459,7 +465,7 @@ export class Renderer {
   private drawMudSplash(
     ctx: CanvasRenderingContext2D,
     effect: ActiveEffectVisual,
-    alpha: number,
+    alpha: number
   ): void {
     const { x, y, width, height } = effect;
 
@@ -473,10 +479,7 @@ export class Renderer {
     const cy = y + height / 2;
 
     // Muddy gradient
-    const gradient = ctx.createRadialGradient(
-      cx, cy, 0,
-      cx, cy, Math.max(currentW, currentH) / 2,
-    );
+    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(currentW, currentH) / 2);
     gradient.addColorStop(0, "rgba(101, 67, 33, 0.6)");
     gradient.addColorStop(0.6, "rgba(139, 90, 43, 0.3)");
     gradient.addColorStop(1, "rgba(139, 90, 43, 0)");
@@ -501,7 +504,7 @@ export class Renderer {
   private drawWoolShield(
     ctx: CanvasRenderingContext2D,
     effect: ActiveEffectVisual,
-    alpha: number,
+    alpha: number
   ): void {
     // Wool shield draws around the player; use center of canvas playable area
     const { width: canvasW, height: canvasH } = this.renderCtx;
@@ -533,7 +536,7 @@ export class Renderer {
   private drawBleatStun(
     ctx: CanvasRenderingContext2D,
     effect: ActiveEffectVisual,
-    alpha: number,
+    alpha: number
   ): void {
     const { x, y, width: diameter } = effect;
     const radius = diameter / 2;
@@ -565,7 +568,7 @@ export class Renderer {
   private drawHoneyTrap(
     ctx: CanvasRenderingContext2D,
     effect: ActiveEffectVisual,
-    alpha: number,
+    alpha: number
   ): void {
     const { x, y, width, height } = effect;
     const catchesRemaining = (effect.extra?.catchesRemaining as number) ?? 0;
@@ -609,7 +612,7 @@ export class Renderer {
   private drawCrowCall(
     ctx: CanvasRenderingContext2D,
     effect: ActiveEffectVisual,
-    alpha: number,
+    alpha: number
   ): void {
     const { x } = effect;
     const { height: canvasH } = this.renderCtx;
@@ -660,7 +663,7 @@ export class Renderer {
   private drawHayPlatform(
     ctx: CanvasRenderingContext2D,
     effect: ActiveEffectVisual,
-    alpha: number,
+    alpha: number
   ): void {
     const { x, y, width, height } = effect;
 
@@ -695,7 +698,7 @@ export class Renderer {
       const sx = x + (width / (straws + 1)) * (i + 1);
       ctx.beginPath();
       ctx.moveTo(sx, y + 2);
-      ctx.lineTo(sx + (Math.sin(i * 1.5) * 3), y + height - 2);
+      ctx.lineTo(sx + Math.sin(i * 1.5) * 3, y + height - 2);
       ctx.stroke();
     }
   }
@@ -703,23 +706,27 @@ export class Renderer {
   private drawDangerOverlay(state: GameStateManager): void {
     const gameState = state.getState();
     if (!gameState.inDangerState) return;
-    
+
     const { ctx, width, height } = this.renderCtx;
-    
+
     const gradient = ctx.createRadialGradient(
-      width / 2, height / 2, height * 0.3,
-      width / 2, height / 2, height * 0.8
+      width / 2,
+      height / 2,
+      height * 0.3,
+      width / 2,
+      height / 2,
+      height * 0.8
     );
-    gradient.addColorStop(0, 'rgba(244, 67, 54, 0)');
+    gradient.addColorStop(0, "rgba(244, 67, 54, 0)");
     gradient.addColorStop(1, `rgba(244, 67, 54, ${0.15 + Math.sin(Date.now() / 100) * 0.05})`);
-    
+
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
   }
 
   private drawDebug(entities: EntityManager, state: GameStateManager): void {
     const gameState = state.getState();
-    
+
     this.renderCtx.drawDebugInfo({
       FPS: Math.round(1000 / 16.67), // Placeholder
       Entities: entities.count,
@@ -732,19 +739,14 @@ export class Renderer {
 
   private drawHitboxes(entities: EntityManager): void {
     const { ctx } = this.renderCtx;
-    
-    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+
+    ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
     ctx.lineWidth = 1;
-    
+
     for (const entity of entities.getAll()) {
       if (entity.bounds) {
         const { position } = entity.transform;
-        ctx.strokeRect(
-          position.x,
-          position.y,
-          entity.bounds.width,
-          entity.bounds.height
-        );
+        ctx.strokeRect(position.x, position.y, entity.bounds.width, entity.bounds.height);
       }
     }
   }

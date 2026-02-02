@@ -9,8 +9,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { feedback } from "@/platform";
 import { GAME_CONFIG } from "../config";
-import { Game, type GameCallbacks } from "../engine/Game";
 import type { AbilityIndicatorData } from "../engine";
+import { Game, type GameCallbacks } from "../engine/Game";
 
 export interface UseGameEngineReturn {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -51,6 +51,9 @@ interface UseGameEngineOptions {
 export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngineReturn {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Game | null>(null);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   const [score, setScore] = useState(0);
   const [multiplier, setMultiplier] = useState(1);
@@ -59,7 +62,7 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
   const [bankedAnimals, setBankedAnimals] = useState(0);
   const [level, setLevel] = useState(1);
   const [lives, setLives] = useState<number>(GAME_CONFIG.lives.starting);
-  const [maxLives] = useState<number>(GAME_CONFIG.lives.max);
+  const [maxLives, setMaxLives] = useState<number>(GAME_CONFIG.lives.max);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -90,8 +93,9 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
         setStackHeight(height);
         setCanBank(canBankNow);
       },
-      onLivesChange: (newLives) => {
+      onLivesChange: (newLives, newMaxLives) => {
         setLives(newLives);
+        if (newMaxLives !== undefined) setMaxLives(newMaxLives);
       },
       onGameOver: (finalScore, totalBanked) => {
         setIsPlaying(false);
@@ -100,17 +104,25 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
         feedback.stopMusic();
         // Play game over voice line
         feedback.playVoice("gameover");
-        options.onGameOver?.(finalScore, totalBanked);
+        optionsRef.current.onGameOver?.(finalScore, totalBanked);
       },
       onPerfectCatch: (_x, _y) => {
         setPerfectKey((prev) => prev + 1);
         setShowPerfect(true);
-        setTimeout(() => setShowPerfect(false), 800);
-        options.onPerfectCatch?.();
+        const t1 = setTimeout(() => {
+          setShowPerfect(false);
+          timeoutsRef.current.delete(t1);
+        }, 800);
+        timeoutsRef.current.add(t1);
+        optionsRef.current.onPerfectCatch?.();
       },
       onGoodCatch: (_x, _y) => {
         setShowGood(true);
-        setTimeout(() => setShowGood(false), 600);
+        const t2 = setTimeout(() => {
+          setShowGood(false);
+          timeoutsRef.current.delete(t2);
+        }, 600);
+        timeoutsRef.current.add(t2);
       },
       onMiss: () => {
         // Could add miss animation here
@@ -122,17 +134,17 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
         setLevel(newLevel);
         // Play level-up sound (music intensity is managed by Game internally)
         feedback.play("levelup");
-        options.onLevelUp?.(newLevel);
+        optionsRef.current.onLevelUp?.(newLevel);
       },
       onLifeEarned: () => {
         feedback.play("lifeup");
-        options.onLifeEarned?.();
+        optionsRef.current.onLifeEarned?.();
       },
       onDangerStateChange: (danger) => {
         setInDanger(danger);
       },
       onStackTopple: () => {
-        options.onStackTopple?.();
+        optionsRef.current.onStackTopple?.();
       },
       onAbilityChange: (indicators) => {
         setAbilityIndicators(indicators);
@@ -144,16 +156,11 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
 
     return () => {
       engine.destroy();
+      for (const t of timeoutsRef.current) clearTimeout(t);
+      timeoutsRef.current.clear();
     };
-  }, [
-    options.onGameOver,
-    options.onLevelUp,
-    options.onLifeEarned,
-    options.onStackTopple,
-    options.onMerge,
-    options.onPerfectCatch,
-    options.onPowerUp,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const startGame = useCallback(async () => {
     if (engineRef.current) {

@@ -3,14 +3,14 @@
  * Rustic farm-themed menu screen with orientation-aware background
  */
 
-import { useState, useCallback } from "react";
-import { GAME_INFO, FARM_COLORS } from "../config";
-import { type GameModeType, getUnlockedModes } from "../modes/GameMode";
-import { getCoins } from "../progression/Upgrades";
+import { useCallback, useState } from "react";
+import { MenuBackground } from "../components/MenuBackground";
 import { ModeSelect } from "../components/ModeSelect";
 import { UpgradeShop } from "../components/UpgradeShop";
-import { MenuBackground } from "../components/MenuBackground";
+import { FARM_COLORS, GAME_INFO } from "../config";
 import { useUISound } from "../hooks/useUISound";
+import { type GameModeType, getUnlockedModes } from "../modes/GameMode";
+import { getCoins } from "../progression/Upgrades";
 
 interface MainMenuProps {
   onPlay: (mode?: GameModeType) => void;
@@ -56,12 +56,7 @@ export function MainMenu({ onPlay, highScore }: MainMenuProps) {
   }
 
   if (showModes) {
-    return (
-      <ModeSelect
-        onSelectMode={handleModeSelect}
-        onClose={() => setShowModes(false)}
-      />
-    );
+    return <ModeSelect onSelectMode={handleModeSelect} onClose={() => setShowModes(false)} />;
   }
 
   return (
@@ -120,10 +115,7 @@ export function MainMenu({ onPlay, highScore }: MainMenuProps) {
             {GAME_INFO.tagline}
           </p>
 
-          <p
-            className="text-sm mt-1 opacity-70"
-            style={{ color: FARM_COLORS.ui.text }}
-          >
+          <p className="text-sm mt-1 opacity-70" style={{ color: FARM_COLORS.ui.text }}>
             {GAME_INFO.subtitle}
           </p>
         </div>
@@ -137,10 +129,7 @@ export function MainMenu({ onPlay, highScore }: MainMenuProps) {
               border: `2px solid ${FARM_COLORS.fence.post}`,
             }}
           >
-            <p
-              className="game-font text-sm"
-              style={{ color: FARM_COLORS.ui.text }}
-            >
+            <p className="game-font text-sm" style={{ color: FARM_COLORS.ui.text }}>
               BEST: {highScore.toLocaleString()}
             </p>
           </div>
@@ -191,10 +180,7 @@ export function MainMenu({ onPlay, highScore }: MainMenuProps) {
               boxShadow: `0 4px 0 ${FARM_COLORS.barn.roof}`,
             }}
           >
-            <span
-              className="game-font text-lg"
-              style={{ color: FARM_COLORS.ui.textLight }}
-            >
+            <span className="game-font text-lg" style={{ color: FARM_COLORS.ui.textLight }}>
               SHOP
             </span>
             <span
@@ -218,10 +204,7 @@ export function MainMenu({ onPlay, highScore }: MainMenuProps) {
                 boxShadow: `0 4px 0 ${FARM_COLORS.nature.bushDark}`,
               }}
             >
-              <span
-                className="game-font text-lg"
-                style={{ color: FARM_COLORS.ui.textLight }}
-              >
+              <span className="game-font text-lg" style={{ color: FARM_COLORS.ui.textLight }}>
                 MODES
               </span>
             </button>
@@ -236,26 +219,22 @@ export function MainMenu({ onPlay, highScore }: MainMenuProps) {
           <p className="text-sm" style={{ color: FARM_COLORS.ui.text }}>
             Drag to catch falling animals from the tornado!
             <br />
-            <span className="opacity-70">
-              Stack &apos;em high, but don&apos;t let them topple!
-            </span>
+            <span className="opacity-70">Stack &apos;em high, but don&apos;t let them topple!</span>
           </p>
         </div>
 
         {/* Animal preview decorations */}
         <div className="flex gap-4 mt-2 opacity-60">
           {/* Simple animal silhouettes */}
-          {["\u{1F404}", "\u{1F414}", "\u{1F437}", "\u{1F411}", "\u{1F986}"].map(
-            (emoji, i) => (
-              <span
-                key={i}
-                className="text-2xl animate-bounce"
-                style={{ animationDelay: `${i * 0.1}s` }}
-              >
-                {emoji}
-              </span>
-            )
-          )}
+          {["\u{1F404}", "\u{1F414}", "\u{1F437}", "\u{1F411}", "\u{1F986}"].map((emoji, i) => (
+            <span
+              key={i}
+              className="text-2xl animate-bounce"
+              style={{ animationDelay: `${i * 0.1}s` }}
+            >
+              {emoji}
+            </span>
+          ))}
         </div>
       </div>
     </>

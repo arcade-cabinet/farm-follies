@@ -1,6 +1,6 @@
 /**
  * InputManager - Unified input handling for mouse, touch, and keyboard
- * 
+ *
  * Responsibilities:
  * - Normalizes mouse and touch input
  * - Tracks drag state with velocity
@@ -59,7 +59,7 @@ export class InputManager {
   private element: HTMLElement;
   private config: InputConfig;
   private callbacks: InputCallbacks;
-  
+
   private state: InputState = {
     pointerX: 0,
     pointerY: 0,
@@ -72,7 +72,7 @@ export class InputManager {
     smoothedVelocityX: 0,
     lastEventTime: 0,
   };
-  
+
   private lastPointerX = 0;
   private lastPointerY = 0;
   private boundHandlers: {
@@ -85,7 +85,7 @@ export class InputManager {
     touchend: (e: TouchEvent) => void;
     touchcancel: (e: TouchEvent) => void;
   };
-  
+
   private enabled = true;
 
   constructor(
@@ -96,7 +96,7 @@ export class InputManager {
     this.element = element;
     this.callbacks = callbacks;
     this.config = { ...DEFAULT_CONFIG, ...config };
-    
+
     // Bind handlers
     this.boundHandlers = {
       mousedown: this.handleMouseDown.bind(this),
@@ -108,7 +108,7 @@ export class InputManager {
       touchend: this.handleTouchEnd.bind(this),
       touchcancel: this.handleTouchEnd.bind(this),
     };
-    
+
     this.attach();
   }
 
@@ -116,28 +116,28 @@ export class InputManager {
    * Attach event listeners
    */
   attach(): void {
-    this.element.addEventListener('mousedown', this.boundHandlers.mousedown);
-    this.element.addEventListener('mousemove', this.boundHandlers.mousemove);
-    this.element.addEventListener('mouseup', this.boundHandlers.mouseup);
-    this.element.addEventListener('mouseleave', this.boundHandlers.mouseleave);
-    this.element.addEventListener('touchstart', this.boundHandlers.touchstart, { passive: false });
-    this.element.addEventListener('touchmove', this.boundHandlers.touchmove, { passive: false });
-    this.element.addEventListener('touchend', this.boundHandlers.touchend);
-    this.element.addEventListener('touchcancel', this.boundHandlers.touchcancel);
+    this.element.addEventListener("mousedown", this.boundHandlers.mousedown);
+    this.element.addEventListener("mousemove", this.boundHandlers.mousemove);
+    this.element.addEventListener("mouseup", this.boundHandlers.mouseup);
+    this.element.addEventListener("mouseleave", this.boundHandlers.mouseleave);
+    this.element.addEventListener("touchstart", this.boundHandlers.touchstart, { passive: false });
+    this.element.addEventListener("touchmove", this.boundHandlers.touchmove, { passive: false });
+    this.element.addEventListener("touchend", this.boundHandlers.touchend);
+    this.element.addEventListener("touchcancel", this.boundHandlers.touchcancel);
   }
 
   /**
    * Detach event listeners
    */
   detach(): void {
-    this.element.removeEventListener('mousedown', this.boundHandlers.mousedown);
-    this.element.removeEventListener('mousemove', this.boundHandlers.mousemove);
-    this.element.removeEventListener('mouseup', this.boundHandlers.mouseup);
-    this.element.removeEventListener('mouseleave', this.boundHandlers.mouseleave);
-    this.element.removeEventListener('touchstart', this.boundHandlers.touchstart);
-    this.element.removeEventListener('touchmove', this.boundHandlers.touchmove);
-    this.element.removeEventListener('touchend', this.boundHandlers.touchend);
-    this.element.removeEventListener('touchcancel', this.boundHandlers.touchcancel);
+    this.element.removeEventListener("mousedown", this.boundHandlers.mousedown);
+    this.element.removeEventListener("mousemove", this.boundHandlers.mousemove);
+    this.element.removeEventListener("mouseup", this.boundHandlers.mouseup);
+    this.element.removeEventListener("mouseleave", this.boundHandlers.mouseleave);
+    this.element.removeEventListener("touchstart", this.boundHandlers.touchstart);
+    this.element.removeEventListener("touchmove", this.boundHandlers.touchmove);
+    this.element.removeEventListener("touchend", this.boundHandlers.touchend);
+    this.element.removeEventListener("touchcancel", this.boundHandlers.touchcancel);
   }
 
   /**
@@ -185,11 +185,11 @@ export class InputManager {
    */
   update(deltaTime: number): void {
     if (!this.state.isDragging) {
-      const decay = Math.pow(this.config.velocityDecay, deltaTime / 16.67);
+      const decay = this.config.velocityDecay ** (deltaTime / 16.67);
       this.state.velocityX *= decay;
       this.state.velocityY *= decay;
       this.state.smoothedVelocityX *= decay;
-      
+
       // Zero out tiny velocities
       if (Math.abs(this.state.velocityX) < 0.01) this.state.velocityX = 0;
       if (Math.abs(this.state.velocityY) < 0.01) this.state.velocityY = 0;
@@ -227,7 +227,7 @@ export class InputManager {
   // Private: Handle pointer down
   private handlePointerDown(x: number, y: number): void {
     if (!this.enabled) return;
-    
+
     this.state.pointerX = x;
     this.state.pointerY = y;
     this.state.isPointerDown = true;
@@ -238,53 +238,53 @@ export class InputManager {
     this.state.lastEventTime = performance.now();
     this.lastPointerX = x;
     this.lastPointerY = y;
-    
+
     this.callbacks.onPointerDown?.(x, y);
   }
 
   // Private: Handle pointer move
   private handlePointerMove(x: number, y: number): void {
     if (!this.enabled) return;
-    
+
     const now = performance.now();
     const dt = now - this.state.lastEventTime;
-    
+
     // Calculate velocity
     const deltaX = x - this.lastPointerX;
     const deltaY = y - this.lastPointerY;
-    
+
     if (dt > 0) {
       const instantVelocityX = deltaX;
       const instantVelocityY = deltaY;
-      
+
       // Smooth velocity
       const s = this.config.velocitySmoothing;
       this.state.velocityX = this.state.velocityX * (1 - s) + instantVelocityX * s;
       this.state.velocityY = this.state.velocityY * (1 - s) + instantVelocityY * s;
       this.state.smoothedVelocityX = this.state.smoothedVelocityX * 0.6 + deltaX * 0.4;
     }
-    
+
     this.state.pointerX = x;
     this.state.pointerY = y;
     this.state.lastEventTime = now;
-    
+
     // Check for drag start
     if (this.state.isPointerDown && !this.state.isDragging) {
       const dx = x - this.state.dragStartX;
       const dy = y - this.state.dragStartY;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      
+
       if (dist >= this.config.dragThreshold) {
         this.state.isDragging = true;
         this.callbacks.onDragStart?.(this.state.dragStartX, this.state.dragStartY);
       }
     }
-    
+
     // Drag move
     if (this.state.isDragging) {
       this.callbacks.onDragMove?.(x, y, deltaX, deltaY);
     }
-    
+
     this.lastPointerX = x;
     this.lastPointerY = y;
   }
@@ -292,16 +292,16 @@ export class InputManager {
   // Private: Handle pointer up
   private handlePointerUp(x: number, y: number): void {
     if (!this.enabled) return;
-    
+
     const wasDragging = this.state.isDragging;
-    
+
     this.state.pointerX = x;
     this.state.pointerY = y;
     this.state.isPointerDown = false;
     this.state.isDragging = false;
-    
+
     this.callbacks.onPointerUp?.(x, y);
-    
+
     if (wasDragging) {
       this.callbacks.onDragEnd?.(x, y, this.state.velocityX, this.state.velocityY);
     } else {

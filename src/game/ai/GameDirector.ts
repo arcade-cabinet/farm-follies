@@ -17,12 +17,12 @@ import { GameEntity, GoalEvaluator, Think } from "yuka";
 import type { AnimalTypeConfig, PowerUpType } from "../config";
 /** Behavior types for falling animals */
 export type AnimalBehaviorType =
-  | "normal"   // Falls straight down with slight drift
-  | "seeker"   // Actively seeks the player
-  | "evader"   // Tries to avoid the player
-  | "zigzag"   // Moves in a zigzag pattern
-  | "swarm"    // Follows other animals
-  | "dive"     // Fast dive at player
+  | "normal" // Falls straight down with slight drift
+  | "seeker" // Actively seeks the player
+  | "evader" // Tries to avoid the player
+  | "zigzag" // Moves in a zigzag pattern
+  | "swarm" // Follows other animals
+  | "dive" // Fast dive at player
   | "floater"; // Slow, drifting fall
 
 /**
@@ -681,7 +681,8 @@ class ReleaseTensionEvaluator extends GoalEvaluator<GameDirector> {
     // Release after high stress or after big stack
     const stressFactor = owner.playerFrustration * 0.4;
     const recentIntensity = owner.intensity > 0.7 ? 0.3 : 0;
-    const postBank = owner.gameState.stackHeight === 0 && owner.gameState.bankedAnimals > 0 ? 0.3 : 0;
+    const postBank =
+      owner.gameState.stackHeight === 0 && owner.gameState.bankedAnimals > 0 ? 0.3 : 0;
 
     return stressFactor + recentIntensity + postBank;
   }

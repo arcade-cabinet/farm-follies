@@ -1,6 +1,12 @@
 /**
  * Upgrade/Progression System
  * Permanent upgrades that persist across games
+ *
+ * TODO: Migrate localStorage calls to platform storage abstraction
+ * (src/platform/storage.ts) for native Capacitor Preferences support.
+ * The platform storage API is async, so loadUpgradeState and
+ * saveUpgradeState would need to become async, which cascades to all
+ * callers (getUpgrades, purchaseUpgrade, addCoins, etc.).
  */
 
 export interface Upgrade {

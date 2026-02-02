@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { GAME_CONFIG } from "../../config";
 import {
-  GameStateManager,
   createInitialState,
   type GameStateCallbacks,
+  GameStateManager,
 } from "../managers/GameStateManager";
-import { GAME_CONFIG } from "../../config";
 
 const { lives: livesConfig, scoring, difficulty, banking } = GAME_CONFIG;
 
@@ -79,10 +79,7 @@ describe("GameStateManager", () => {
     it("fires onScoreChange and onLivesChange callbacks", () => {
       manager.startGame();
       expect(callbacks.onScoreChange).toHaveBeenCalledWith(0, 1, 0);
-      expect(callbacks.onLivesChange).toHaveBeenCalledWith(
-        livesConfig.starting,
-        livesConfig.max,
-      );
+      expect(callbacks.onLivesChange).toHaveBeenCalledWith(livesConfig.starting, livesConfig.max);
     });
   });
 
@@ -166,9 +163,7 @@ describe("GameStateManager", () => {
       for (let i = 0; i < 200; i++) {
         manager.addScore(10);
       }
-      expect(manager.getState().currentMultiplier).toBeLessThanOrEqual(
-        scoring.maxMultiplier,
-      );
+      expect(manager.getState().currentMultiplier).toBeLessThanOrEqual(scoring.maxMultiplier);
     });
 
     it("fires onScoreChange callback", () => {
@@ -431,9 +426,7 @@ describe("GameStateManager", () => {
       for (let i = 0; i < 20; i++) {
         manager.increaseMaxLives();
       }
-      expect(manager.getState().maxLives).toBeLessThanOrEqual(
-        livesConfig.absoluteMax,
-      );
+      expect(manager.getState().maxLives).toBeLessThanOrEqual(livesConfig.absoluteMax);
     });
   });
 

@@ -3,8 +3,8 @@
  * Handles pause/resume, back button, state restoration
  */
 
-import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 
 export type AppState = "active" | "inactive" | "background";
 

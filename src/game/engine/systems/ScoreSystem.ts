@@ -3,30 +3,30 @@
  * Pure functions for all scoring logic
  */
 
-import type { AnimalState, ScoreState, ProgressionState } from '../state/GameState';
-import { ANIMAL_ARCHETYPES } from './SpawnSystem';
+import type { AnimalState, ProgressionState, ScoreState } from "../state/GameState";
+import { ANIMAL_ARCHETYPES } from "./SpawnSystem";
 
 // Score configuration
 export interface ScoreConfig {
   // Base points
   baseCatchPoints: number;
   bankBonusPerAnimal: number;
-  
+
   // Combos
   comboMultiplierIncrement: number;
   maxComboMultiplier: number;
   comboDecayTime: number; // ms before combo resets
-  
+
   // Special bonuses
   specialVariantBonus: number;
   bushBounceBonus: number;
   perfectCatchBonus: number; // Catch in center
-  
+
   // Level bonuses
   levelCompleteBonus: number;
   noMissBonus: number;
   speedBonus: number;
-  
+
   // Power-up multipliers
   doublePointsMultiplier: number;
 }
@@ -34,19 +34,19 @@ export interface ScoreConfig {
 export const DEFAULT_SCORE_CONFIG: ScoreConfig = {
   baseCatchPoints: 10,
   bankBonusPerAnimal: 5,
-  
+
   comboMultiplierIncrement: 0.1,
   maxComboMultiplier: 3.0,
   comboDecayTime: 2000,
-  
+
   specialVariantBonus: 25,
   bushBounceBonus: 15,
   perfectCatchBonus: 10,
-  
+
   levelCompleteBonus: 100,
   noMissBonus: 50,
   speedBonus: 25,
-  
+
   doublePointsMultiplier: 2,
 };
 
@@ -59,47 +59,47 @@ export interface ScoreEvent {
   source?: string;
 }
 
-export type ScoreEventType = 
-  | 'catch'
-  | 'bank'
-  | 'combo'
-  | 'special_variant'
-  | 'bush_bounce'
-  | 'perfect_catch'
-  | 'level_complete'
-  | 'no_miss'
-  | 'speed_bonus'
-  | 'power_up';
+export type ScoreEventType =
+  | "catch"
+  | "bank"
+  | "combo"
+  | "special_variant"
+  | "bush_bounce"
+  | "perfect_catch"
+  | "level_complete"
+  | "no_miss"
+  | "speed_bonus"
+  | "power_up";
 
 /**
  * Calculate points for catching an animal
  */
 export function calculateCatchPoints(
   animal: AnimalState,
-  catchPosition: 'left' | 'center' | 'right',
+  catchPosition: "left" | "center" | "right",
   scoreState: ScoreState,
   config: ScoreConfig = DEFAULT_SCORE_CONFIG
 ): ScoreEvent {
   const archetype = ANIMAL_ARCHETYPES.get(animal.type);
   const basePoints = archetype?.pointValue ?? config.baseCatchPoints;
-  
+
   // Apply multipliers
   let multiplier = scoreState.multiplier;
-  
+
   // Combo multiplier
-  multiplier *= 1 + (scoreState.combo * config.comboMultiplierIncrement);
+  multiplier *= 1 + scoreState.combo * config.comboMultiplierIncrement;
   multiplier = Math.min(multiplier, config.maxComboMultiplier);
-  
+
   // Perfect catch bonus
   let bonusPoints = 0;
-  if (catchPosition === 'center') {
+  if (catchPosition === "center") {
     bonusPoints += config.perfectCatchBonus;
   }
-  
+
   const finalPoints = Math.floor((basePoints + bonusPoints) * multiplier);
-  
+
   return {
-    type: 'catch',
+    type: "catch",
     basePoints,
     multiplier,
     finalPoints,
@@ -116,14 +116,14 @@ export function calculateSpecialVariantBonus(
   config: ScoreConfig = DEFAULT_SCORE_CONFIG
 ): ScoreEvent {
   const archetype = ANIMAL_ARCHETYPES.get(animal.type);
-  const variant = archetype?.variants.find(v => v.id === animal.variant);
-  
+  const variant = archetype?.variants.find((v) => v.id === animal.variant);
+
   const basePoints = config.specialVariantBonus;
   const variantMultiplier = variant?.pointMultiplier ?? 1;
   const finalPoints = Math.floor(basePoints * variantMultiplier * scoreState.multiplier);
-  
+
   return {
-    type: 'special_variant',
+    type: "special_variant",
     basePoints,
     multiplier: variantMultiplier * scoreState.multiplier,
     finalPoints,
@@ -140,24 +140,24 @@ export function calculateBankPoints(
   config: ScoreConfig = DEFAULT_SCORE_CONFIG
 ): ScoreEvent {
   let basePoints = 0;
-  
+
   // Sum up animal values
-  animals.forEach(animal => {
+  animals.forEach((animal) => {
     const archetype = ANIMAL_ARCHETYPES.get(animal.type);
     basePoints += archetype?.pointValue ?? config.baseCatchPoints;
   });
-  
+
   // Add banking bonus per animal
   basePoints += animals.length * config.bankBonusPerAnimal;
-  
+
   // Stack size bonus (more animals = higher bonus)
-  const stackBonus = Math.pow(animals.length, 1.5) * 5;
+  const stackBonus = animals.length ** 1.5 * 5;
   basePoints += Math.floor(stackBonus);
-  
+
   const finalPoints = Math.floor(basePoints * scoreState.multiplier);
-  
+
   return {
-    type: 'bank',
+    type: "bank",
     basePoints,
     multiplier: scoreState.multiplier,
     finalPoints,
@@ -175,9 +175,9 @@ export function calculateBushBounceBonus(
 ): ScoreEvent {
   const basePoints = config.bushBounceBonus;
   const finalPoints = Math.floor(basePoints * scoreState.multiplier);
-  
+
   return {
-    type: 'bush_bounce',
+    type: "bush_bounce",
     basePoints,
     multiplier: scoreState.multiplier,
     finalPoints,
@@ -196,41 +196,41 @@ export function calculateLevelBonus(
   config: ScoreConfig = DEFAULT_SCORE_CONFIG
 ): ScoreEvent[] {
   const events: ScoreEvent[] = [];
-  
+
   // Base level completion bonus
   const levelBonus = config.levelCompleteBonus * level;
   events.push({
-    type: 'level_complete',
+    type: "level_complete",
     basePoints: levelBonus,
     multiplier: 1,
     finalPoints: levelBonus,
     source: `Level ${level}`,
   });
-  
+
   // No miss bonus
   if (missedCount === 0) {
     events.push({
-      type: 'no_miss',
+      type: "no_miss",
       basePoints: config.noMissBonus,
       multiplier: level,
       finalPoints: config.noMissBonus * level,
-      source: 'Perfect!',
+      source: "Perfect!",
     });
   }
-  
+
   // Speed bonus (completed faster than target)
   if (completionTime < targetTime) {
-    const speedFactor = 1 - (completionTime / targetTime);
+    const speedFactor = 1 - completionTime / targetTime;
     const speedBonus = Math.floor(config.speedBonus * speedFactor * level);
     events.push({
-      type: 'speed_bonus',
+      type: "speed_bonus",
       basePoints: config.speedBonus,
       multiplier: speedFactor * level,
       finalPoints: speedBonus,
-      source: 'Speed bonus!',
+      source: "Speed bonus!",
     });
   }
-  
+
   return events;
 }
 
@@ -250,14 +250,14 @@ export function updateCombo(
       timer: config.comboDecayTime,
     };
   }
-  
+
   // Decay timer
   const newTimer = currentTimer - deltaTime;
-  
+
   if (newTimer <= 0) {
     return { combo: 0, timer: 0 };
   }
-  
+
   return { combo: currentCombo, timer: newTimer };
 }
 
@@ -277,28 +277,25 @@ export function calculateTotalMultiplier(
   config: ScoreConfig = DEFAULT_SCORE_CONFIG
 ): number {
   let multiplier = scoreState.multiplier;
-  
+
   // Combo contribution
   multiplier += scoreState.combo * config.comboMultiplierIncrement;
-  
+
   // Power-up contribution
   if (doublePointsActive) {
     multiplier *= config.doublePointsMultiplier;
   }
-  
+
   return Math.min(multiplier, config.maxComboMultiplier * config.doublePointsMultiplier);
 }
 
 /**
  * Apply score event to score state
  */
-export function applyScoreEvent(
-  scoreState: ScoreState,
-  event: ScoreEvent
-): ScoreState {
+export function applyScoreEvent(scoreState: ScoreState, event: ScoreEvent): ScoreState {
   const newScore = scoreState.current + event.finalPoints;
   const newHighScore = Math.max(scoreState.highScore, newScore);
-  
+
   return {
     ...scoreState,
     current: newScore,
@@ -310,10 +307,7 @@ export function applyScoreEvent(
 /**
  * Apply multiple score events
  */
-export function applyScoreEvents(
-  scoreState: ScoreState,
-  events: ScoreEvent[]
-): ScoreState {
+export function applyScoreEvents(scoreState: ScoreState, events: ScoreEvent[]): ScoreState {
   return events.reduce((state, event) => applyScoreEvent(state, event), scoreState);
 }
 
@@ -341,12 +335,12 @@ export function formatMultiplier(multiplier: number): string {
  * Calculate high score rank description
  */
 export function getScoreRank(score: number): { rank: string; description: string } {
-  if (score >= 10000) return { rank: 'S', description: 'Legendary Farmer' };
-  if (score >= 7500) return { rank: 'A', description: 'Master Farmer' };
-  if (score >= 5000) return { rank: 'B', description: 'Expert Farmer' };
-  if (score >= 2500) return { rank: 'C', description: 'Skilled Farmer' };
-  if (score >= 1000) return { rank: 'D', description: 'Apprentice Farmer' };
-  return { rank: 'E', description: 'Novice Farmer' };
+  if (score >= 10000) return { rank: "S", description: "Legendary Farmer" };
+  if (score >= 7500) return { rank: "A", description: "Master Farmer" };
+  if (score >= 5000) return { rank: "B", description: "Expert Farmer" };
+  if (score >= 2500) return { rank: "C", description: "Skilled Farmer" };
+  if (score >= 1000) return { rank: "D", description: "Apprentice Farmer" };
+  return { rank: "E", description: "Novice Farmer" };
 }
 
 /**

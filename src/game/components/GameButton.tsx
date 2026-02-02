@@ -5,8 +5,8 @@
 
 import type { ButtonHTMLAttributes, MouseEvent } from "react";
 import { useCallback } from "react";
-import { cn } from "@/lib/utils";
 import { useUISound } from "@/game/hooks/useUISound";
+import { cn } from "@/lib/utils";
 
 interface GameButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;

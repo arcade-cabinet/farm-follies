@@ -1,6 +1,6 @@
 /**
  * Entity - Base class for all game entities
- * 
+ *
  * Uses composition over inheritance - entities are data containers
  * that hold components. Systems operate on entities with specific components.
  */
@@ -36,9 +36,16 @@ export interface EntityComponents {
 let entityIdCounter = 0;
 
 /**
+ * Reset the entity ID counter (call at game start)
+ */
+export function resetEntityIdCounter(): void {
+  entityIdCounter = 0;
+}
+
+/**
  * Generate a unique entity ID
  */
-export function generateEntityId(prefix: string = 'entity'): string {
+export function generateEntityId(prefix: string = "entity"): string {
   return `${prefix}_${Date.now()}_${++entityIdCounter}`;
 }
 
@@ -144,7 +151,7 @@ export function getEntityBounds(entity: Entity): {
   const { position, scale } = entity.transform;
   const width = (entity.bounds?.width ?? 0) * scale.x;
   const height = (entity.bounds?.height ?? 0) * scale.y;
-  
+
   return {
     x: position.x,
     y: position.y,
@@ -161,10 +168,7 @@ export function getEntityBounds(entity: Entity): {
 export function isPointInEntity(entity: Entity, x: number, y: number): boolean {
   const bounds = getEntityBounds(entity);
   return (
-    x >= bounds.x &&
-    x <= bounds.x + bounds.width &&
-    y >= bounds.y &&
-    y <= bounds.y + bounds.height
+    x >= bounds.x && x <= bounds.x + bounds.width && y >= bounds.y && y <= bounds.y + bounds.height
   );
 }
 
@@ -184,7 +188,7 @@ export function getEntityDistance(a: Entity, b: Entity): number {
  */
 export function applyVelocity(entity: Entity, dt: number): void {
   if (!entity.velocity) return;
-  
+
   const dtSeconds = dt / 1000;
   entity.transform.position.x += entity.velocity.linear.x * dtSeconds * 60;
   entity.transform.position.y += entity.velocity.linear.y * dtSeconds * 60;

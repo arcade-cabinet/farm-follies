@@ -1,72 +1,92 @@
 /**
  * Game - Main game orchestrator
- * 
+ *
  * Composes all modules into a cohesive game experience.
  * This is the new, modular replacement for the monolithic GameEngine.
  */
 
-import { feedback } from '@/platform';
-import { GAME_CONFIG, POWER_UPS, type PowerUpType } from '../config';
-
+import { feedback } from "@/platform";
+import { type GameState as DirectorGameState, GameDirector } from "../ai/GameDirector";
+import { GAME_CONFIG, POWER_UPS, type PowerUpType } from "../config";
+// Particle effects
+import { ParticleSystem } from "../effects/ParticleEffects";
+// AI
+import { type TornadoState, updateTornadoState } from "../renderer/tornado";
 // Core
-import { GameLoop } from './core/GameLoop';
-import { calculateScale, createScaleObserver, type ScaleFactors } from './core/ResponsiveScale';
-
-// Input
-import { InputManager } from './input/InputManager';
-
+import { GameLoop } from "./core/GameLoop";
+import { calculateScale, createScaleObserver, type ScaleFactors } from "./core/ResponsiveScale";
+import { type AnimalEntity, catchAnimal, createRandomAnimal } from "./entities/Animal";
 // Entities
-import { createPlayer, updatePlayerPosition, getPlayerCenterX, getStackTopY, type PlayerEntity, addToStack, clearStack, isInvincible, setInvincible, updatePowerUpTimers, activateMagnet, activateDoublePoints } from './entities/Player';
-import { createRandomAnimal, catchAnimal, type AnimalEntity } from './entities/Animal';
-import { createPowerUp, updatePowerUpBob, getPowerUpBobOffset, type PowerUpEntity } from './entities/PowerUp';
-
+import { resetEntityIdCounter } from "./entities/Entity";
+import {
+  activateDoublePoints,
+  activateMagnet,
+  addToStack,
+  clearStack,
+  createPlayer,
+  getPlayerCenterX,
+  getStackTopY,
+  isInvincible,
+  type PlayerEntity,
+  setInvincible,
+  updatePlayerPosition,
+  updatePowerUpTimers,
+  updateStress,
+} from "./entities/Player";
+import {
+  createPowerUp,
+  getPowerUpBobOffset,
+  type PowerUpEntity,
+  updatePowerUpBob,
+} from "./entities/PowerUp";
+// Input
+import { InputManager } from "./input/InputManager";
 // Managers
-import { EntityManager, createEntityManager } from './managers/EntityManager';
-import { GameStateManager, type GameStateCallbacks } from './managers/GameStateManager';
-
+import { createEntityManager, type EntityManager } from "./managers/EntityManager";
+import { type GameStateCallbacks, GameStateManager } from "./managers/GameStateManager";
 // Rendering
-import { RenderContext, createRenderContext } from './rendering/RenderContext';
-import { Renderer } from './rendering/Renderer';
-
-// Systems
+import { createRenderContext, type RenderContext } from "./rendering/RenderContext";
+import { Renderer } from "./rendering/Renderer";
+import type { ProjectileState } from "./state/GameState";
 import {
-  createBushFromPoop,
-  createBushRuntimeState,
-  addBushToState,
-  removeBushFromState,
-  getActiveBushes,
-  updateAllBushes,
-  findNearbyBushes,
-  applyBushBounce,
-  shouldRemoveBush,
-  type BushRuntimeState,
-} from './systems/BushSystem';
-import type { ProjectileState } from './state/GameState';
-import { calculateMagneticPull } from './systems/CollisionSystem';
-import { createStackWobbleState, applyStackImpulse, getAnimalWeight, type StackWobbleState, type AnimalWobbleState, DEFAULT_WOBBLE_CONFIG } from './systems/WobblePhysics';
-import {
-  createAbilitySystemState,
+  type AbilityIndicator as AbilityIndicatorData,
+  type AbilitySystemState,
   activateAbility,
-  updateAbilityEffects,
-  consumeHoneyTrapCatch,
-  updateStackAbilityCooldowns,
-  findTappedAbilityAnimal,
-  resolveAbilityType,
-  getFeatherFloatMultiplier,
-  getMudSlowFactor,
   checkHayPlatformBounce,
+  consumeHoneyTrapCatch,
+  createAbilitySystemState,
+  findTappedAbilityAnimal,
   getAbilityIndicators,
   getActiveEffectVisuals,
-  type AbilitySystemState,
-  type AbilityIndicator as AbilityIndicatorData,
-} from './systems/AbilitySystem';
-
-// Particle effects
-import { ParticleSystem } from '../effects/ParticleEffects';
-
-// AI
-import { updateTornadoState, type TornadoState } from '../renderer/tornado';
-import { GameDirector, type GameState as DirectorGameState } from '../ai/GameDirector';
+  getFeatherFloatMultiplier,
+  getMudSlowFactor,
+  resolveAbilityType,
+  updateAbilityEffects,
+  updateStackAbilityCooldowns,
+} from "./systems/AbilitySystem";
+// Systems
+import {
+  addBushToState,
+  applyBushBounce,
+  type BushRuntimeState,
+  createBushFromPoop,
+  createBushRuntimeState,
+  findNearbyBushes,
+  getActiveBushes,
+  removeBushFromState,
+  resetBushIdCounter,
+  shouldRemoveBush,
+  updateAllBushes,
+} from "./systems/BushSystem";
+import { calculateMagneticPull } from "./systems/CollisionSystem";
+import {
+  type AnimalWobbleState,
+  applyStackImpulse,
+  createStackWobbleState,
+  DEFAULT_WOBBLE_CONFIG,
+  getAnimalWeight,
+  type StackWobbleState,
+} from "./systems/WobblePhysics";
 
 const { layout, collision, physics, lives: livesConfig } = GAME_CONFIG;
 
@@ -89,23 +109,23 @@ export class Game {
   private canvas: HTMLCanvasElement;
   private renderCtx: RenderContext;
   private renderer: Renderer;
-  
+
   // Core systems
   private gameLoop: GameLoop;
   private input: InputManager;
   private entities: EntityManager;
   private gameState: GameStateManager;
-  
+
   // AI
   private gameDirector: GameDirector;
-  
+
   // Scale
   private scale: ScaleFactors;
   private cleanupScaleObserver: (() => void) | null = null;
-  
+
   // Tornado
   private tornadoState: TornadoState;
-  
+
   // Wobble
   private wobbleState: StackWobbleState;
 
@@ -125,25 +145,28 @@ export class Game {
   // Pending timeouts (tracked for cleanup)
   private pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
 
+  // Performance tracking for GameDirector
+  private lastMissTime = 0;
+  private lastPerfectTime = 0;
+  private recentCatchCount = 0;
+  private recentMissCount = 0;
+  private recentPerfectCount = 0;
+
   // Status
   private _isPlaying = false;
   private _isPaused = false;
 
-  constructor(
-    canvas: HTMLCanvasElement,
-    callbacks: GameCallbacks = {},
-    config: GameConfig = {}
-  ) {
+  constructor(canvas: HTMLCanvasElement, callbacks: GameCallbacks = {}, config: GameConfig = {}) {
     this.canvas = canvas;
     this.callbacks = callbacks;
-    
+
     // Initialize scale
     this.scale = calculateScale(canvas.width, canvas.height);
-    
+
     // Initialize render context
     this.renderCtx = createRenderContext(canvas, this.scale);
     this.renderer = new Renderer(this.renderCtx, { showDebug: config.showDebug ?? false });
-    
+
     // Initialize managers
     this.entities = createEntityManager();
     this.gameState = new GameStateManager({
@@ -154,13 +177,13 @@ export class Game {
       onGameOver: callbacks.onGameOver,
       onLifeEarned: callbacks.onLifeEarned,
     });
-    
+
     // Initialize AI
     this.gameDirector = new GameDirector();
-    
+
     // Initialize tornado
     this.tornadoState = this.createInitialTornadoState();
-    
+
     // Initialize wobble
     this.wobbleState = createStackWobbleState();
 
@@ -178,14 +201,17 @@ export class Game {
       onDragMove: this.handleDragMove.bind(this),
       onTap: this.handleTap.bind(this),
     });
-    
+
     // Initialize game loop
-    this.gameLoop = new GameLoop({
-      fixedUpdate: this.fixedUpdate.bind(this),
-      update: this.update.bind(this),
-      render: this.render.bind(this),
-    }, { enableMetrics: config.showDebug });
-    
+    this.gameLoop = new GameLoop(
+      {
+        fixedUpdate: this.fixedUpdate.bind(this),
+        update: this.update.bind(this),
+        render: this.render.bind(this),
+      },
+      { enableMetrics: config.showDebug }
+    );
+
     // Setup resize handling
     this.setupResize();
   }
@@ -195,7 +221,7 @@ export class Game {
    */
   start(): void {
     feedback.init();
-    
+
     // Reset state
     this.gameState.startGame();
     this.entities.clear();
@@ -206,7 +232,18 @@ export class Game {
     this.particleSystem.clear();
     this.tornadoState = this.createInitialTornadoState();
     this.gameDirector = new GameDirector();
-    
+
+    // Reset performance tracking
+    this.lastMissTime = 0;
+    this.lastPerfectTime = 0;
+    this.recentCatchCount = 0;
+    this.recentMissCount = 0;
+    this.recentPerfectCount = 0;
+
+    // Reset module-level ID counters
+    resetEntityIdCounter();
+    resetBushIdCounter();
+
     // Create player
     const floorY = this.canvas.height * layout.floorY;
     const player = createPlayer(
@@ -216,19 +253,19 @@ export class Game {
       this.scale.entityHeight
     );
     this.entities.addImmediate(player);
-    
+
     // Enable input
     this.input.enable();
-    
+
     // Start music
     feedback.startMusic();
     feedback.setIntensity(0);
-    
+
     // Start loop
     this._isPlaying = true;
     this._isPaused = false;
     this.gameLoop.start();
-    
+
     // Notify UI
     this.notifyStackChange();
   }
@@ -266,20 +303,20 @@ export class Game {
    * Bank current stack
    */
   bankStack(): void {
-    const player = this.entities.get<PlayerEntity>('player');
+    const player = this.entities.get<PlayerEntity>("player");
     if (!player || !this.gameState.canBank(player.player.stack.length)) return;
-    
+
     const count = player.player.stack.length;
-    
+
     // Calculate and add bank bonus
     this.gameState.bankAnimals(count);
-    
+
     // Clear player stack
     const updatedPlayer = clearStack(player);
     this.entities.replace(updatedPlayer);
-    
+
     // Effects
-    feedback.play('bank');
+    feedback.play("bank");
     this.callbacks.onBankComplete?.(this.gameState.bankedAnimals);
     this.notifyStackChange();
   }
@@ -316,7 +353,7 @@ export class Game {
    * Get stack height
    */
   get stackHeight(): number {
-    const player = this.entities.get<PlayerEntity>('player');
+    const player = this.entities.get<PlayerEntity>("player");
     return player?.player.stack.length ?? 0;
   }
 
@@ -330,7 +367,7 @@ export class Game {
   // Private methods
 
   private notifyStackChange(): void {
-    const player = this.entities.get<PlayerEntity>('player');
+    const player = this.entities.get<PlayerEntity>("player");
     const height = player?.player.stack.length ?? 0;
     const canBankNow = this.gameState.canBank(height);
     this.callbacks.onStackChange?.(height, canBankNow);
@@ -357,14 +394,18 @@ export class Game {
 
   private handleDragMove(x: number, _y: number, deltaX: number): void {
     if (!this._isPlaying || this._isPaused) return;
-    
-    const player = this.entities.get<PlayerEntity>('player');
+
+    const player = this.entities.get<PlayerEntity>("player");
     if (!player) return;
-    
+
     // Apply wobble from movement
     const wobbleForce = this.input.getState().smoothedVelocityX * physics.wobbleStrength * 0.8;
     if (Math.abs(wobbleForce) > 0.001) {
-      this.wobbleState = applyStackImpulse(this.wobbleState, Math.sign(wobbleForce), Math.abs(wobbleForce) * 0.1);
+      this.wobbleState = applyStackImpulse(
+        this.wobbleState,
+        Math.sign(wobbleForce),
+        Math.abs(wobbleForce) * 0.1
+      );
     }
   }
 
@@ -387,9 +428,9 @@ export class Game {
     const playerCenterX = getPlayerCenterX(player);
     const stackTopY = getStackTopY(player);
     const groundY = this.canvas.height * layout.floorY;
-    const fallingAnimals = this.entities.getByType<AnimalEntity>("animal").filter(
-      (a) => a.animal.state === "falling",
-    );
+    const fallingAnimals = this.entities
+      .getByType<AnimalEntity>("animal")
+      .filter((a) => a.animal.state === "falling");
 
     const result = activateAbility(this.abilityState, tappedAnimal, abilityType, {
       playerCenterX,
@@ -406,7 +447,7 @@ export class Game {
 
     // Update the animal in the player stack with its new cooldown
     const updatedStack = player.player.stack.map((a) =>
-      a.id === result.animal.id ? result.animal : a,
+      a.id === result.animal.id ? result.animal : a
     );
     const updatedPlayer: PlayerEntity = {
       ...player,
@@ -416,7 +457,9 @@ export class Game {
 
     // Handle instant effects
     if (result.bonusScore > 0) {
-      this.gameState.addScore(result.bonusScore, {
+      const player = this.entities.get<PlayerEntity>("player");
+      const abilityScoreMultiplier = player?.player.doublePointsActive ? 2 : 1;
+      this.gameState.addScore(result.bonusScore * abilityScoreMultiplier, {
         isPerfect: false,
         isGood: false,
         stackBonus: 1,
@@ -425,9 +468,7 @@ export class Game {
 
     // Egg bomb: remove cleared falling animals
     if (abilityType === "egg_bomb") {
-      const eggEffect = result.state.activeEffects.find(
-        (e) => e.type === "egg_bomb",
-      );
+      const eggEffect = result.state.activeEffects.find((e) => e.type === "egg_bomb");
       if (eggEffect && eggEffect.type === "egg_bomb") {
         for (const clearedId of eggEffect.clearedAnimalIds) {
           this.entities.remove(clearedId);
@@ -444,11 +485,14 @@ export class Game {
    */
   private fixedUpdate(dt: number): void {
     if (!this._isPlaying || this._isPaused) return;
-    
+
     const now = performance.now();
-    const player = this.entities.get<PlayerEntity>('player');
+    const player = this.entities.get<PlayerEntity>("player");
     if (!player) return;
-    
+
+    // Update play time
+    this.gameState.updatePlayTime(dt);
+
     // Update tornado
     this.tornadoState = updateTornadoState(
       this.tornadoState,
@@ -457,10 +501,10 @@ export class Game {
       this.scale.bankWidth
     );
     this.tornadoState.intensity = 0.3 + Math.min(0.7, this.gameState.level * 0.05);
-    
+
     // Update game director
     this.updateDirector(dt, player);
-    
+
     // Spawn check
     if (this.gameState.shouldSpawn(now)) {
       this.spawnAnimal();
@@ -522,7 +566,8 @@ export class Game {
 
     // Award ability bonus score
     if (abilityResult.bonusScore > 0) {
-      this.gameState.addScore(abilityResult.bonusScore, {
+      const abilityScoreMultiplier = player.player.doublePointsActive ? 2 : 1;
+      this.gameState.addScore(abilityResult.bonusScore * abilityScoreMultiplier, {
         isPerfect: false,
         isGood: false,
         stackBonus: 1,
@@ -539,12 +584,15 @@ export class Game {
     this.wobbleState = this.updateWobble(
       player.player.stack,
       this.input.getState().smoothedVelocityX,
-      dt,
+      dt
     );
+
+    // Update player stress based on wobble intensity
+    const stressedPlayer = updateStress(player, this.wobbleState.overallIntensity);
 
     // Check stack stability (wool shield prevents toppling)
     if (!abilityResult.isShielded) {
-      this.checkStackStability(player);
+      this.checkStackStability(stressedPlayer);
     } else {
       // Still show warning visuals but do not topple
       this.gameState.setDangerState(false);
@@ -554,13 +602,10 @@ export class Game {
     this.gameState.updateCombo(now);
 
     // Update stacked animal ability cooldowns
-    const cooldownUpdatedStack = updateStackAbilityCooldowns(
-      player.player.stack,
-      dt,
-    );
+    const cooldownUpdatedStack = updateStackAbilityCooldowns(stressedPlayer.player.stack, dt);
     const playerWithCooldowns: PlayerEntity = {
-      ...player,
-      player: { ...player.player, stack: cooldownUpdatedStack },
+      ...stressedPlayer,
+      player: { ...stressedPlayer.player, stack: cooldownUpdatedStack },
     };
 
     // Update player power-up timers
@@ -573,15 +618,15 @@ export class Game {
    */
   private update(dt: number, _alpha: number): void {
     if (!this._isPlaying) return;
-    
-    const player = this.entities.get<PlayerEntity>('player');
+
+    const player = this.entities.get<PlayerEntity>("player");
     if (!player) return;
-    
+
     // Update player position
     const inputState = this.input.getState();
     const minX = this.scale.entityWidth / 2 + 10;
     const maxX = this.canvas.width - this.scale.bankWidth - this.scale.entityWidth / 2 - 10;
-    
+
     const updatedPlayer = updatePlayerPosition(
       player,
       inputState.pointerX,
@@ -591,7 +636,7 @@ export class Game {
       inputState.isDragging
     );
     this.entities.replace(updatedPlayer);
-    
+
     // Update renderer effects
     this.renderer.update(dt);
 
@@ -600,10 +645,10 @@ export class Game {
 
     // Update input
     this.input.update(dt);
-    
+
     // Update music intensity
     this.updateMusicIntensity();
-    
+
     // Flush entity changes
     this.entities.flush();
   }
@@ -612,7 +657,7 @@ export class Game {
    * Render frame
    */
   private render(_alpha: number): void {
-    const player = this.entities.get<PlayerEntity>('player');
+    const player = this.entities.get<PlayerEntity>("player");
     const invincible = player ? isInvincible(player) : false;
 
     // Gather active ability effect visuals
@@ -625,7 +670,7 @@ export class Game {
       invincible,
       this.activeBushes,
       effectVisuals,
-      this.particleSystem,
+      this.particleSystem
     );
   }
 
@@ -641,20 +686,24 @@ export class Game {
       gameTime: this.gameState.getState().playTime,
       timeSinceLastSpawn: performance.now() - this.gameState.getState().lastSpawnTime,
       timeSinceLastPowerUp: performance.now() - this.gameState.getState().lastPowerUpTime,
-      timeSinceLastMiss: 10000,
-      timeSinceLastPerfect: 10000,
-      recentCatches: 0,
-      recentMisses: 0,
-      recentPerfects: 0,
-      catchRate: 0.5,
-      activeAnimals: this.entities.getCountByType('animal'),
-      activePowerUps: this.entities.getCountByType('powerup'),
+      timeSinceLastMiss: this.lastMissTime > 0 ? performance.now() - this.lastMissTime : 10000,
+      timeSinceLastPerfect:
+        this.lastPerfectTime > 0 ? performance.now() - this.lastPerfectTime : 10000,
+      recentCatches: this.recentCatchCount,
+      recentMisses: this.recentMissCount,
+      recentPerfects: this.recentPerfectCount,
+      catchRate:
+        this.recentCatchCount + this.recentMissCount > 0
+          ? this.recentCatchCount / (this.recentCatchCount + this.recentMissCount)
+          : 0.5,
+      activeAnimals: this.entities.getCountByType("animal"),
+      activePowerUps: this.entities.getCountByType("powerup"),
       screenWidth: this.canvas.width,
       screenHeight: this.canvas.height,
       level: this.gameState.level,
       bankedAnimals: this.gameState.getState().bankedAnimals,
     };
-    
+
     this.gameDirector.updateGameState(state);
     this.gameDirector.update(dt / 1000);
   }
@@ -664,16 +713,14 @@ export class Game {
     if (!decision.shouldSpawn) return;
 
     // Use director's spawn X position (accounts for player modeling), fall back to tornado
-    const spawnX = decision.x !== 0
-      ? decision.x
-      : this.tornadoState.x + (Math.random() - 0.5) * 40;
+    const spawnX = decision.x !== 0 ? decision.x : this.tornadoState.x + (Math.random() - 0.5) * 40;
     const spawnY = -this.scale.entityHeight;
 
     const animal = createRandomAnimal(spawnX, spawnY, this.gameState.level);
     this.entities.add(animal);
-    
+
     this.gameState.updateSpawnTime(performance.now());
-    
+
     // Trigger tornado spawn animation
     this.tornadoState.isSpawning = true;
     const timeout = setTimeout(() => {
@@ -686,7 +733,7 @@ export class Game {
   private updateFallingAnimals(
     dt: number,
     player: PlayerEntity,
-    abilityResult?: Awaited<ReturnType<typeof updateAbilityEffects>>,
+    abilityResult?: Awaited<ReturnType<typeof updateAbilityEffects>>
   ): void {
     const animals = this.entities.getByType<AnimalEntity>("animal");
     const playerCenterX = getPlayerCenterX(player);
@@ -705,12 +752,8 @@ export class Game {
         // Feather float: special ducks fall slower
         const featherMult = getFeatherFloatMultiplier(animal);
 
-        animal.velocity.linear.y +=
-          physics.gravity * featherMult * (dt / 16.67);
-        animal.velocity.linear.y = Math.min(
-          animal.velocity.linear.y,
-          12 * featherMult,
-        );
+        animal.velocity.linear.y += physics.gravity * featherMult * (dt / 16.67);
+        animal.velocity.linear.y = Math.min(animal.velocity.linear.y, 12 * featherMult);
 
         // Mud splash: slow animals in mud zones
         if (abilityResult?.mudZones && abilityResult.mudZones.length > 0) {
@@ -719,7 +762,7 @@ export class Game {
             animal.transform.position.y,
             animal.bounds?.width ?? 50,
             animal.bounds?.height ?? 50,
-            abilityResult.mudZones,
+            abilityResult.mudZones
           );
           if (mudFactor < 1.0) {
             animal.velocity.linear.y *= mudFactor;
@@ -737,31 +780,23 @@ export class Game {
           abilityResult?.magneticPullTargetX !== null &&
           abilityResult?.magneticPullTargetX !== undefined
         ) {
-          const dx =
-            abilityResult.magneticPullTargetX -
-            animal.transform.position.x;
-          animal.velocity.linear.x +=
-            dx * abilityResult.magneticPullStrength * (dt / 16.67);
+          const dx = abilityResult.magneticPullTargetX - animal.transform.position.x;
+          animal.velocity.linear.x += dx * abilityResult.magneticPullStrength * (dt / 16.67);
         }
 
         // Update position
-        animal.transform.position.x +=
-          animal.velocity.linear.x * (dt / 16.67);
-        animal.transform.position.y +=
-          animal.velocity.linear.y * (dt / 16.67);
+        animal.transform.position.x += animal.velocity.linear.x * (dt / 16.67);
+        animal.transform.position.y += animal.velocity.linear.y * (dt / 16.67);
 
         // Hay storm: bounce off hay platforms
-        if (
-          abilityResult?.hayPlatforms &&
-          abilityResult.hayPlatforms.length > 0
-        ) {
+        if (abilityResult?.hayPlatforms && abilityResult.hayPlatforms.length > 0) {
           const hayBounce = checkHayPlatformBounce(
             animal.transform.position.x,
             animal.transform.position.y,
             animal.bounds?.width ?? 50,
             animal.bounds?.height ?? 50,
             animal.velocity.linear.y,
-            abilityResult.hayPlatforms,
+            abilityResult.hayPlatforms
           );
           if (hayBounce.bounced) {
             animal.velocity.linear.y = hayBounce.bounceVelocityY;
@@ -791,8 +826,7 @@ export class Game {
       }
 
       // Check if missed (fell past player)
-      const animalBottom =
-        animal.transform.position.y + (animal.bounds?.height ?? 50);
+      const animalBottom = animal.transform.position.y + (animal.bounds?.height ?? 50);
       if (animalBottom > playerY + (player.bounds?.height ?? 100) + 20) {
         this.entities.remove(animal);
         this.handleMiss();
@@ -802,7 +836,7 @@ export class Game {
 
   private checkCatches(
     player: PlayerEntity,
-    abilityResult?: Awaited<ReturnType<typeof updateAbilityEffects>>,
+    abilityResult?: Awaited<ReturnType<typeof updateAbilityEffects>>
   ): void {
     const animals = this.entities.getByType<AnimalEntity>("animal");
     const playerCenterX = getPlayerCenterX(player);
@@ -812,10 +846,8 @@ export class Game {
     for (const animal of animals) {
       if (animal.animal.state !== "falling") continue;
 
-      const animalCenterX =
-        animal.transform.position.x + (animal.bounds?.width ?? 50) / 2;
-      const animalY =
-        animal.transform.position.y + (animal.bounds?.height ?? 50);
+      const animalCenterX = animal.transform.position.x + (animal.bounds?.width ?? 50) / 2;
+      const animalY = animal.transform.position.y + (animal.bounds?.height ?? 50);
 
       // Check if in catch zone
       const dx = animalCenterX - playerCenterX;
@@ -824,20 +856,12 @@ export class Game {
       if (Math.abs(dx) < catchWidth && dy > -10 && dy < 30) {
         // Honey trap: reduce the horizontal offset so animal lands more centered
         let adjustedRelativeX = dx / catchWidth;
-        if (
-          abilityResult &&
-          abilityResult.honeyTrapCenteringFactor > 0
-        ) {
-          adjustedRelativeX *=
-            1 - abilityResult.honeyTrapCenteringFactor;
+        if (abilityResult && abilityResult.honeyTrapCenteringFactor > 0) {
+          adjustedRelativeX *= 1 - abilityResult.honeyTrapCenteringFactor;
         }
 
         // Catch the animal
-        const caughtAnimal = catchAnimal(
-          animal,
-          player.player.stack.length,
-          adjustedRelativeX * 5,
-        );
+        const caughtAnimal = catchAnimal(animal, player.player.stack.length, adjustedRelativeX * 5);
 
         // Add to player stack
         const updatedPlayer = addToStack(player, caughtAnimal);
@@ -850,33 +874,33 @@ export class Game {
         const isPerfect = Math.abs(adjustedRelativeX) < 0.2;
         const isGood = Math.abs(adjustedRelativeX) < 0.5;
 
-        this.gameState.addScore(animal.animal.pointValue, {
+        const baseScore = animal.animal.pointValue;
+        const scoreMultiplier = updatedPlayer.player.doublePointsActive ? 2 : 1;
+        this.gameState.addScore(baseScore * scoreMultiplier, {
           isPerfect,
           isGood,
-          stackBonus: Math.pow(
-            1.1,
-            updatedPlayer.player.stack.length - 1,
-          ),
+          stackBonus: 1.1 ** (updatedPlayer.player.stack.length - 1),
         });
+
+        // Track catch metrics for GameDirector
+        this.recentCatchCount++;
+        if (isPerfect) {
+          this.lastPerfectTime = performance.now();
+          this.recentPerfectCount++;
+        }
 
         // Effects
         if (isPerfect) {
-          this.callbacks.onPerfectCatch?.(
-            animal.transform.position.x,
-            animal.transform.position.y,
-          );
+          this.callbacks.onPerfectCatch?.(animal.transform.position.x, animal.transform.position.y);
           feedback.play("perfect");
           // Perfect catch particles
           this.particleSystem.emit(
             "perfect",
             animal.transform.position.x + (animal.bounds?.width ?? 50) / 2,
-            animal.transform.position.y + (animal.bounds?.height ?? 50) / 2,
+            animal.transform.position.y + (animal.bounds?.height ?? 50) / 2
           );
         } else if (isGood) {
-          this.callbacks.onGoodCatch?.(
-            animal.transform.position.x,
-            animal.transform.position.y,
-          );
+          this.callbacks.onGoodCatch?.(animal.transform.position.x, animal.transform.position.y);
         }
 
         // Small confetti burst for every catch
@@ -884,7 +908,7 @@ export class Game {
           "coinCollect",
           animal.transform.position.x + (animal.bounds?.width ?? 50) / 2,
           animal.transform.position.y + (animal.bounds?.height ?? 50) / 2,
-          { count: 6 },
+          { count: 6 }
         );
 
         feedback.play("land");
@@ -892,21 +916,13 @@ export class Game {
         // Apply catch wobble (reduced by honey trap)
         const wobbleImpulse =
           abilityResult && abilityResult.wobbleReduction < 1.0
-            ? (0.2 + (animal.animal.weight - 1) * 0.1) *
-              abilityResult.wobbleReduction
+            ? (0.2 + (animal.animal.weight - 1) * 0.1) * abilityResult.wobbleReduction
             : 0.2 + (animal.animal.weight - 1) * 0.1;
 
-        this.wobbleState = applyStackImpulse(
-          this.wobbleState,
-          adjustedRelativeX,
-          wobbleImpulse,
-        );
+        this.wobbleState = applyStackImpulse(this.wobbleState, adjustedRelativeX, wobbleImpulse);
 
         // Consume a honey-trap catch
-        if (
-          abilityResult &&
-          abilityResult.honeyTrapCenteringFactor > 0
-        ) {
+        if (abilityResult && abilityResult.honeyTrapCenteringFactor > 0) {
           this.abilityState = consumeHoneyTrapCatch(this.abilityState);
         }
 
@@ -915,7 +931,7 @@ export class Game {
       }
     }
   }
-  
+
   /**
    * Update wobble state for the stack
    */
@@ -925,15 +941,15 @@ export class Game {
     dt: number
   ): StackWobbleState {
     const config = DEFAULT_WOBBLE_CONFIG;
-    
+
     // Update each animal's wobble
     const newAnimals = new Map<string, AnimalWobbleState>();
     let maxWobble = 0;
-    
+
     for (let i = 0; i < stack.length; i++) {
       const animal = stack[i];
       let wobbleState = this.wobbleState.animals.get(animal.id);
-      
+
       if (!wobbleState) {
         wobbleState = {
           angle: 0,
@@ -942,30 +958,35 @@ export class Game {
           accumulated: 0,
         };
       }
-      
+
       // Movement-induced wobble
       const movementWobble = Math.abs(playerVelocity) * config.movementWobbleScale;
       const heightFactor = 1 + i * config.heightMultiplier;
       const weight = getAnimalWeight(animal.animal.animalType);
-      
+
       // Spring physics
       const springForce = -wobbleState.angle * 5;
-      const newVelocity = (wobbleState.velocity + springForce * (dt / 1000) + movementWobble * heightFactor) * config.dampingFactor;
+      const newVelocity =
+        (wobbleState.velocity + springForce * (dt / 1000) + movementWobble * heightFactor) *
+        config.dampingFactor;
       const newAngle = wobbleState.angle + newVelocity * (dt / 1000);
-      
+
       newAnimals.set(animal.id, {
         angle: newAngle,
         velocity: newVelocity,
         phase: wobbleState.phase,
-        accumulated: Math.max(0, wobbleState.accumulated + Math.abs(newAngle) - config.naturalDecay * (dt / 1000)),
+        accumulated: Math.max(
+          0,
+          wobbleState.accumulated + Math.abs(newAngle) - config.naturalDecay * (dt / 1000)
+        ),
       });
-      
+
       maxWobble = Math.max(maxWobble, Math.abs(newAngle));
-      
+
       // Apply wobble to animal
       animal.animal.wobbleAngle = newAngle;
     }
-    
+
     return {
       animals: newAnimals,
       overallIntensity: maxWobble / config.collapseThreshold,
@@ -977,12 +998,15 @@ export class Game {
   }
 
   private handleMiss(): void {
+    this.lastMissTime = performance.now();
+    this.recentMissCount++;
+
     const stillAlive = this.gameState.loseLife();
     this.callbacks.onMiss?.();
-    feedback.play('miss');
-    
+    feedback.play("miss");
+
     if (stillAlive) {
-      const player = this.entities.get<PlayerEntity>('player');
+      const player = this.entities.get<PlayerEntity>("player");
       if (player) {
         const invinciblePlayer = setInvincible(player, livesConfig.invincibilityDuration);
         this.entities.replace(invinciblePlayer);
@@ -997,7 +1021,7 @@ export class Game {
       this.triggerTopple(player);
     } else {
       this.gameState.setDangerState(this.wobbleState.isWarning);
-      
+
       if (this.wobbleState.isWarning) {
         this.renderer.shake(0.3 * this.wobbleState.overallIntensity);
       }
@@ -1006,21 +1030,21 @@ export class Game {
 
   private triggerTopple(player: PlayerEntity): void {
     this.callbacks.onStackTopple?.();
-    feedback.play('topple');
-    
+    feedback.play("topple");
+
     // Clear stack
     const updatedPlayer = clearStack(player);
     this.entities.replace(updatedPlayer);
-    
+
     // Lose life
     const stillAlive = this.gameState.loseLife();
-    
+
     if (stillAlive) {
       const invinciblePlayer = setInvincible(updatedPlayer, livesConfig.invincibilityDuration);
       this.entities.replace(invinciblePlayer);
       this.renderer.shake(1);
     }
-    
+
     this.notifyStackChange();
   }
 
@@ -1166,7 +1190,7 @@ export class Game {
 
   private updateMusicIntensity(): void {
     const state = this.gameState.getState();
-    const player = this.entities.get<PlayerEntity>('player');
+    const player = this.entities.get<PlayerEntity>("player");
     const stackHeight = player?.player.stack.length ?? 0;
 
     const stackFactor = Math.min(1, stackHeight / 10);
@@ -1174,7 +1198,10 @@ export class Game {
     const dangerFactor = state.inDangerState ? 0.3 : 0;
     const comboFactor = Math.min(0.2, state.combo / 20);
 
-    const intensity = Math.min(1, stackFactor * 0.4 + levelFactor * 0.3 + dangerFactor + comboFactor);
+    const intensity = Math.min(
+      1,
+      stackFactor * 0.4 + levelFactor * 0.3 + dangerFactor + comboFactor
+    );
     feedback.setIntensity(intensity);
   }
 }

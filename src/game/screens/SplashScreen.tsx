@@ -6,6 +6,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useOrientation } from "@/game/hooks/useOrientation";
 
 const PORTRAIT_VIDEO = "/assets/video/splash_portrait.mp4";
 const LANDSCAPE_VIDEO = "/assets/video/splash_landscape.mp4";
@@ -13,31 +14,6 @@ const FADE_DURATION_MS = 600;
 
 interface SplashScreenProps {
   onComplete: () => void;
-}
-
-function useOrientation(): "portrait" | "landscape" {
-  const [orientation, setOrientation] = useState<"portrait" | "landscape">(() =>
-    window.innerWidth >= window.innerHeight ? "landscape" : "portrait"
-  );
-
-  useEffect(() => {
-    const handleResize = () => {
-      setOrientation(window.innerWidth >= window.innerHeight ? "landscape" : "portrait");
-    };
-
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("orientationchange", () => {
-      // Delay to let the browser finish the orientation change layout
-      setTimeout(handleResize, 150);
-    });
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", handleResize);
-    };
-  }, []);
-
-  return orientation;
 }
 
 export function SplashScreen({ onComplete }: SplashScreenProps) {
@@ -116,10 +92,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       {/* Skip hint */}
       {!isFading && (
         <div className="absolute bottom-8 left-0 right-0 text-center pointer-events-none z-10">
-          <p
-            className="text-white/50 text-sm"
-            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
-          >
+          <p className="text-white/50 text-sm" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
             Tap to skip
           </p>
         </div>

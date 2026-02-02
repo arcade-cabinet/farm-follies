@@ -4,18 +4,18 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { feedback } from "@/platform";
 import { type Achievement, checkAchievements, loadStats, saveStats } from "../achievements";
+import { AbilityBar } from "../components/AbilityIndicator";
 import { AchievementToastList } from "../components/AchievementToast";
+import { BankButton } from "../components/BankButton";
 import { GameStyles } from "../components/GameStyles";
 import { PauseButton } from "../components/PauseButton";
 import { PauseMenu } from "../components/PauseMenu";
 import { PerfectIndicator } from "../components/PerfectIndicator";
-import { AbilityBar } from "../components/AbilityIndicator";
-import { BankButton } from "../components/BankButton";
 import { ScoreDisplay } from "../components/ScoreDisplay";
 import { SoundToggle } from "../components/SoundToggle";
 import { hasCompletedTutorial, Tutorial } from "../components/Tutorial";
-import { feedback } from "@/platform";
 import { useGameEngine } from "../hooks/useGameEngine";
 import { useHighScore } from "../hooks/useHighScore";
 import { useResponsiveScale } from "../hooks/useResponsiveScale";

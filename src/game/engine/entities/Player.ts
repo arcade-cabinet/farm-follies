@@ -2,8 +2,8 @@
  * Player - The farmer player entity
  */
 
-import { Entity, createEntity, Vector2 } from './Entity';
-import type { AnimalEntity } from './Animal';
+import type { AnimalEntity } from "./Animal";
+import { createEntity, type Entity, Vector2 } from "./Entity";
 
 export interface PlayerComponents {
   /** Stacked animals */
@@ -31,28 +31,23 @@ export interface PlayerComponents {
 }
 
 export interface PlayerEntity extends Entity {
-  type: 'player';
+  type: "player";
   player: PlayerComponents;
 }
 
 /**
  * Create the player entity
  */
-export function createPlayer(
-  x: number,
-  y: number,
-  width: number,
-  height: number
-): PlayerEntity {
-  const baseEntity = createEntity('player', x - width / 2, y - height, {
-    id: 'player',
+export function createPlayer(x: number, y: number, width: number, height: number): PlayerEntity {
+  const baseEntity = createEntity("player", x - width / 2, y - height, {
+    id: "player",
     width,
     height,
   });
 
   return {
     ...baseEntity,
-    type: 'player',
+    type: "player",
     player: {
       stack: [],
       targetX: x,
@@ -81,17 +76,17 @@ export function getPlayerCenterX(player: PlayerEntity): number {
  */
 export function getStackTopY(player: PlayerEntity): number {
   const baseY = player.transform.position.y;
-  
+
   if (player.player.stack.length === 0) {
     return baseY;
   }
-  
+
   // Calculate stack height with overlap
   let stackHeight = 0;
   for (const animal of player.player.stack) {
     stackHeight += (animal.bounds?.height ?? 50) * 0.7;
   }
-  
+
   return baseY - stackHeight;
 }
 
@@ -108,7 +103,7 @@ export function getPlayerCatchZone(player: PlayerEntity): {
   const topY = getStackTopY(player);
   const width = (player.bounds?.width ?? 80) * 1.2;
   const height = (player.bounds?.height ?? 100) * 0.3;
-  
+
   return {
     x: centerX - width / 2,
     y: topY - height / 2,
@@ -120,12 +115,9 @@ export function getPlayerCatchZone(player: PlayerEntity): {
 /**
  * Add animal to stack
  */
-export function addToStack(
-  player: PlayerEntity,
-  animal: AnimalEntity
-): PlayerEntity {
+export function addToStack(player: PlayerEntity, animal: AnimalEntity): PlayerEntity {
   const newStack = [...player.player.stack, animal];
-  
+
   return {
     ...player,
     player: {
@@ -168,10 +160,10 @@ export function updatePlayerPosition(
 ): PlayerEntity {
   const smoothTime = 25;
   const frameLerp = 1 - Math.exp(-dt / smoothTime);
-  
+
   let newX = player.transform.position.x + (player.bounds?.width ?? 80) / 2;
   let newDragVelocity = player.player.dragVelocity;
-  
+
   if (isDragging) {
     // While dragging: smooth interpolation toward target
     const dx = targetX - newX;
@@ -188,7 +180,7 @@ export function updatePlayerPosition(
       const momentumStep = newDragVelocity * (dt / 16.67) * 0.4;
       newX += momentumStep;
       newDragVelocity *= momentumDecay;
-      
+
       // Bounce at edges
       if (newX < minX) {
         newX = minX;
@@ -201,13 +193,13 @@ export function updatePlayerPosition(
       newDragVelocity = 0;
     }
   }
-  
+
   // Clamp to bounds
   newX = Math.max(minX, Math.min(maxX, newX));
-  
+
   // Convert center X back to position X
   const halfWidth = (player.bounds?.width ?? 80) / 2;
-  
+
   return {
     ...player,
     transform: {
@@ -228,10 +220,7 @@ export function updatePlayerPosition(
 /**
  * Set invincibility
  */
-export function setInvincible(
-  player: PlayerEntity,
-  durationMs: number
-): PlayerEntity {
+export function setInvincible(player: PlayerEntity, durationMs: number): PlayerEntity {
   return {
     ...player,
     player: {
@@ -254,7 +243,7 @@ export function isInvincible(player: PlayerEntity): boolean {
  */
 export function updatePowerUpTimers(player: PlayerEntity): PlayerEntity {
   const now = performance.now();
-  
+
   return {
     ...player,
     player: {
@@ -269,10 +258,7 @@ export function updatePowerUpTimers(player: PlayerEntity): PlayerEntity {
 /**
  * Activate magnet power-up
  */
-export function activateMagnet(
-  player: PlayerEntity,
-  durationMs: number
-): PlayerEntity {
+export function activateMagnet(player: PlayerEntity, durationMs: number): PlayerEntity {
   return {
     ...player,
     player: {
@@ -286,10 +272,7 @@ export function activateMagnet(
 /**
  * Activate double points power-up
  */
-export function activateDoublePoints(
-  player: PlayerEntity,
-  durationMs: number
-): PlayerEntity {
+export function activateDoublePoints(player: PlayerEntity, durationMs: number): PlayerEntity {
   return {
     ...player,
     player: {
@@ -303,15 +286,12 @@ export function activateDoublePoints(
 /**
  * Update player stress level based on stack state
  */
-export function updateStress(
-  player: PlayerEntity,
-  dangerLevel: number
-): PlayerEntity {
+export function updateStress(player: PlayerEntity, dangerLevel: number): PlayerEntity {
   // Smooth stress transitions
   const targetStress = dangerLevel;
   const currentStress = player.player.stress;
   const newStress = currentStress + (targetStress - currentStress) * 0.1;
-  
+
   return {
     ...player,
     player: {

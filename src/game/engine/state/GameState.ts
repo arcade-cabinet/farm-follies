@@ -3,7 +3,7 @@
  * Single source of truth for all game data
  */
 
-import type { PowerUpType } from "../../config";
+import type { AnimalType, PowerUpType } from "../../config";
 
 // Entity state types
 export interface EntityState {
@@ -30,16 +30,7 @@ export interface AnimalState extends EntityState {
   specialAbilityCooldown: number;
 }
 
-export type AnimalType =
-  | 'duck'
-  | 'chicken'
-  | 'pig'
-  | 'cow'
-  | 'sheep'
-  | 'goat'
-  | 'horse'
-  | 'goose'
-  | 'rooster';
+export type { AnimalType };
 
 export interface PlayerState extends EntityState {
   stackedAnimals: AnimalState[];
@@ -76,21 +67,21 @@ export interface PowerUpState extends EntityState {
 }
 
 export interface ProjectileState extends EntityState {
-  type: 'poop' | 'egg' | 'feather' | 'milk';
+  type: "poop" | "egg" | "feather" | "milk";
   sourceAnimalId: string;
   damage: number;
   lifetime: number;
 }
 
 // Game phase states
-export type GamePhase = 
-  | 'idle' 
-  | 'starting' 
-  | 'playing' 
-  | 'paused' 
-  | 'wobble_warning' 
-  | 'game_over' 
-  | 'victory';
+export type GamePhase =
+  | "idle"
+  | "starting"
+  | "playing"
+  | "paused"
+  | "wobble_warning"
+  | "game_over"
+  | "victory";
 
 // Score and progression
 export interface ScoreState {
@@ -131,7 +122,7 @@ export interface ParticleState {
   size: number;
   lifetime: number;
   maxLifetime: number;
-  type: 'dust' | 'sparkle' | 'debris' | 'splash' | 'feather';
+  type: "dust" | "sparkle" | "debris" | "splash" | "feather";
 }
 
 export interface FloatingTextState {
@@ -151,7 +142,7 @@ export interface GameState {
   phase: GamePhase;
   timestamp: number;
   deltaTime: number;
-  
+
   // Entities
   player: PlayerState;
   tornado: TornadoState;
@@ -159,15 +150,15 @@ export interface GameState {
   bushes: BushState[];
   powerUps: PowerUpState[];
   projectiles: ProjectileState[];
-  
+
   // Game data
   score: ScoreState;
   progression: ProgressionState;
   effects: EffectsState;
-  
+
   // Input state
   input: InputState;
-  
+
   // Canvas dimensions (for calculations)
   canvas: {
     width: number;
@@ -190,7 +181,7 @@ export function createInitialPlayerState(canvasWidth: number, canvasHeight: numb
   const width = 80;
   const height = 100;
   return {
-    id: 'player',
+    id: "player",
     x: canvasWidth / 2 - width / 2,
     y: canvasHeight - height - 20,
     width,
@@ -225,19 +216,23 @@ export function createInitialTornadoState(canvasWidth: number, bankWidth: number
   };
 }
 
-export function createInitialGameState(canvasWidth: number, canvasHeight: number, bankWidth: number): GameState {
+export function createInitialGameState(
+  canvasWidth: number,
+  canvasHeight: number,
+  bankWidth: number
+): GameState {
   return {
-    phase: 'idle',
+    phase: "idle",
     timestamp: 0,
     deltaTime: 0,
-    
+
     player: createInitialPlayerState(canvasWidth, canvasHeight),
     tornado: createInitialTornadoState(canvasWidth, bankWidth),
     fallingAnimals: [],
     bushes: [],
     powerUps: [],
     projectiles: [],
-    
+
     score: {
       current: 0,
       multiplier: 1,
@@ -246,7 +241,7 @@ export function createInitialGameState(canvasWidth: number, canvasHeight: number
       highScore: 0,
       levelScore: 0,
     },
-    
+
     progression: {
       level: 1,
       lives: 3,
@@ -256,7 +251,7 @@ export function createInitialGameState(canvasWidth: number, canvasHeight: number
       animalsThisLevel: 0,
       bossDefeated: false,
     },
-    
+
     effects: {
       screenShake: 0,
       flashColor: null,
@@ -264,7 +259,7 @@ export function createInitialGameState(canvasWidth: number, canvasHeight: number
       particles: [],
       floatingTexts: [],
     },
-    
+
     input: {
       pointerX: 0,
       pointerY: 0,
@@ -273,7 +268,7 @@ export function createInitialGameState(canvasWidth: number, canvasHeight: number
       dragStartX: 0,
       dragOffsetX: 0,
     },
-    
+
     canvas: {
       width: canvasWidth,
       height: canvasHeight,
@@ -321,7 +316,7 @@ export function addFallingAnimal(state: GameState, animal: AnimalState): GameSta
 export function removeFallingAnimal(state: GameState, animalId: string): GameState {
   return {
     ...state,
-    fallingAnimals: state.fallingAnimals.filter(a => a.id !== animalId),
+    fallingAnimals: state.fallingAnimals.filter((a) => a.id !== animalId),
   };
 }
 

@@ -3,9 +3,9 @@
  * Rustic farm-themed results display with orientation-aware background
  */
 
-import { FARM_COLORS, FAIL_MESSAGES } from "../config";
 import { useMemo } from "react";
 import { MenuBackground } from "../components/MenuBackground";
+import { FAIL_MESSAGES, FARM_COLORS } from "../config";
 import { useUISound } from "../hooks/useUISound";
 
 interface GameOverScreenProps {
@@ -107,12 +107,8 @@ export function GameOverScreen({
             <p
               className="game-font text-4xl"
               style={{
-                color: isNewHighScore
-                  ? FARM_COLORS.nature.corn
-                  : FARM_COLORS.ui.text,
-                textShadow: isNewHighScore
-                  ? "0 0 20px rgba(255, 215, 0, 0.6)"
-                  : "none",
+                color: isNewHighScore ? FARM_COLORS.nature.corn : FARM_COLORS.ui.text,
+                textShadow: isNewHighScore ? "0 0 20px rgba(255, 215, 0, 0.6)" : "none",
               }}
             >
               {score.toLocaleString()}
@@ -135,32 +131,20 @@ export function GameOverScreen({
           >
             {/* Animals banked */}
             <div className="text-center">
-              <p
-                className="text-xs mb-1"
-                style={{ color: FARM_COLORS.ui.text, opacity: 0.6 }}
-              >
+              <p className="text-xs mb-1" style={{ color: FARM_COLORS.ui.text, opacity: 0.6 }}>
                 ANIMALS SAVED
               </p>
-              <p
-                className="game-font text-2xl"
-                style={{ color: FARM_COLORS.barn.red }}
-              >
+              <p className="game-font text-2xl" style={{ color: FARM_COLORS.barn.red }}>
                 {bankedAnimals}
               </p>
             </div>
 
             {/* Coins earned */}
             <div className="text-center">
-              <p
-                className="text-xs mb-1"
-                style={{ color: FARM_COLORS.ui.text, opacity: 0.6 }}
-              >
+              <p className="text-xs mb-1" style={{ color: FARM_COLORS.ui.text, opacity: 0.6 }}>
                 COINS EARNED
               </p>
-              <p
-                className="game-font text-2xl"
-                style={{ color: FARM_COLORS.nature.corn }}
-              >
+              <p className="game-font text-2xl" style={{ color: FARM_COLORS.nature.corn }}>
                 +{earnedCoins}
               </p>
             </div>
@@ -172,10 +156,7 @@ export function GameOverScreen({
               className="text-center mt-3 pt-3"
               style={{ borderTop: `2px dashed ${FARM_COLORS.fence.post}` }}
             >
-              <p
-                className="text-xs"
-                style={{ color: FARM_COLORS.ui.text, opacity: 0.6 }}
-              >
+              <p className="text-xs" style={{ color: FARM_COLORS.ui.text, opacity: 0.6 }}>
                 BEST: {highScore.toLocaleString()}
               </p>
             </div>
@@ -241,19 +222,17 @@ export function GameOverScreen({
 
         {/* Scattered animal emojis */}
         <div className="flex gap-2 mt-2 opacity-40">
-          {["\u{1F404}", "\u{1F414}", "\u{1F437}", "\u{1F411}"].map(
-            (emoji, i) => (
-              <span
-                key={i}
-                className="text-xl"
-                style={{
-                  transform: `rotate(${(Math.random() - 0.5) * 60}deg)`,
-                }}
-              >
-                {emoji}
-              </span>
-            )
-          )}
+          {["\u{1F404}", "\u{1F414}", "\u{1F437}", "\u{1F411}"].map((emoji, i) => (
+            <span
+              key={i}
+              className="text-xl"
+              style={{
+                transform: `rotate(${(Math.random() - 0.5) * 60}deg)`,
+              }}
+            >
+              {emoji}
+            </span>
+          ))}
         </div>
       </div>
     </>

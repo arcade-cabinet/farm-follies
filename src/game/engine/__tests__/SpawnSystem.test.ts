@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
+import type { AnimalType } from "../../config";
 import {
-  DEFAULT_SPAWN_CONFIG,
   ANIMAL_ARCHETYPES,
   calculateSpawnInterval,
-  selectAnimalType,
-  shouldSpawn,
-  createSpawnState,
   createAnimalState,
-  selectVariant,
+  createSpawnState,
+  DEFAULT_SPAWN_CONFIG,
   type SpawnConfig,
+  selectAnimalType,
+  selectVariant,
+  shouldSpawn,
 } from "../systems/SpawnSystem";
 
 describe("SpawnSystem", () => {
@@ -31,9 +32,17 @@ describe("SpawnSystem", () => {
 
   describe("ANIMAL_ARCHETYPES", () => {
     it("defines archetypes for all animal types", () => {
-      const expectedTypes = ["chicken", "duck", "pig", "cow", "sheep", "goat", "horse"];
+      const expectedTypes: AnimalType[] = [
+        "chicken",
+        "duck",
+        "pig",
+        "cow",
+        "sheep",
+        "goat",
+        "horse",
+      ];
       for (const type of expectedTypes) {
-        expect(ANIMAL_ARCHETYPES.has(type as any)).toBe(true);
+        expect(ANIMAL_ARCHETYPES.has(type)).toBe(true);
       }
     });
 

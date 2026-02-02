@@ -1,6 +1,6 @@
 /**
  * EntityManager - Manages all game entities with efficient querying
- * 
+ *
  * Provides:
  * - Entity storage and retrieval by ID
  * - Querying entities by type
@@ -8,7 +8,7 @@
  * - Spatial queries (future: quadtree)
  */
 
-import type { Entity } from '../entities/Entity';
+import type { Entity } from "../entities/Entity";
 
 export interface EntityQuery<T extends Entity = Entity> {
   type?: string;
@@ -37,12 +37,12 @@ export class EntityManager {
    */
   addImmediate<T extends Entity>(entity: T): T {
     this.entities.set(entity.id, entity);
-    
+
     if (!this.entitiesByType.has(entity.type)) {
       this.entitiesByType.set(entity.type, new Set());
     }
     this.entitiesByType.get(entity.type)!.add(entity.id);
-    
+
     return entity;
   }
 
@@ -50,7 +50,7 @@ export class EntityManager {
    * Mark an entity for removal (queued until flush)
    */
   remove(entityOrId: Entity | string): void {
-    const id = typeof entityOrId === 'string' ? entityOrId : entityOrId.id;
+    const id = typeof entityOrId === "string" ? entityOrId : entityOrId.id;
     this.pendingRemove.add(id);
     this.dirty = true;
   }
@@ -59,9 +59,9 @@ export class EntityManager {
    * Remove an entity immediately
    */
   removeImmediate(entityOrId: Entity | string): void {
-    const id = typeof entityOrId === 'string' ? entityOrId : entityOrId.id;
+    const id = typeof entityOrId === "string" ? entityOrId : entityOrId.id;
     const entity = this.entities.get(id);
-    
+
     if (entity) {
       this.entities.delete(id);
       this.entitiesByType.get(entity.type)?.delete(id);
@@ -88,7 +88,7 @@ export class EntityManager {
   getByType<T extends Entity>(type: string): T[] {
     const ids = this.entitiesByType.get(type);
     if (!ids) return [];
-    
+
     const result: T[] = [];
     for (const id of ids) {
       const entity = this.entities.get(id);
@@ -102,21 +102,21 @@ export class EntityManager {
    */
   query<T extends Entity>(query: EntityQuery<T> = {}): T[] {
     let result: Entity[];
-    
+
     if (query.type) {
       result = this.getByType(query.type);
     } else {
       result = Array.from(this.entities.values());
     }
-    
+
     if (query.active !== undefined) {
-      result = result.filter(e => e.active === query.active);
+      result = result.filter((e) => e.active === query.active);
     }
-    
+
     if (query.filter) {
-      result = result.filter(e => query.filter!(e as T));
+      result = result.filter((e) => query.filter!(e as T));
     }
-    
+
     return result as T[];
   }
 
@@ -124,7 +124,7 @@ export class EntityManager {
    * Get all active entities
    */
   getActive(): Entity[] {
-    return Array.from(this.entities.values()).filter(e => e.active);
+    return Array.from(this.entities.values()).filter((e) => e.active);
   }
 
   /**
@@ -154,31 +154,32 @@ export class EntityManager {
    */
   flush(): void {
     if (!this.dirty) return;
-    
+
     // Process removals first
     for (const id of this.pendingRemove) {
       this.removeImmediate(id);
     }
     this.pendingRemove.clear();
-    
+
     // Process additions
     for (const entity of this.pendingAdd) {
       this.addImmediate(entity);
     }
     this.pendingAdd.length = 0;
-    
+
     this.dirty = false;
   }
 
   /**
-   * Update an entity in place
+   * Update an entity immutably (creates a new object and replaces the Map entry)
    */
   update<T extends Entity>(id: string, updates: Partial<T>): T | undefined {
     const entity = this.entities.get(id);
     if (!entity) return undefined;
-    
-    Object.assign(entity, updates);
-    return entity as T;
+
+    const updated = { ...entity, ...updates } as T;
+    this.entities.set(id, updated);
+    return updated;
   }
 
   /**
@@ -188,7 +189,7 @@ export class EntityManager {
     if (!this.entities.has(entity.id)) {
       return this.addImmediate(entity);
     }
-    
+
     this.entities.set(entity.id, entity);
     return entity;
   }
@@ -243,16 +244,11 @@ export class EntityManager {
    * Get entities within a radius of a point
    * (Simple implementation - future: use spatial hash/quadtree)
    */
-  getInRadius(
-    x: number,
-    y: number,
-    radius: number,
-    type?: string
-  ): Entity[] {
+  getInRadius(x: number, y: number, radius: number, type?: string): Entity[] {
     const radiusSq = radius * radius;
     const entities = type ? this.getByType(type) : this.getAll();
-    
-    return entities.filter(entity => {
+
+    return entities.filter((entity) => {
       const dx = entity.transform.position.x - x;
       const dy = entity.transform.position.y - y;
       return dx * dx + dy * dy <= radiusSq;
@@ -263,9 +259,7 @@ export class EntityManager {
 /**
  * Create an entity manager with initial entities
  */
-export function createEntityManager(
-  initialEntities: Entity[] = []
-): EntityManager {
+export function createEntityManager(initialEntities: Entity[] = []): EntityManager {
   const manager = new EntityManager();
   for (const entity of initialEntities) {
     manager.addImmediate(entity);

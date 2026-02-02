@@ -3,11 +3,14 @@
  * Defines all barnyard animals and their special variants
  */
 
-import type { AnimalArchetype, AnimalType, AbilityType } from './types';
-import { FARM_COLORS } from '../config';
+import { FARM_COLORS } from "../config";
+import type { AbilityType, AnimalArchetype, AnimalType } from "./types";
 
 // Base animal definitions
-export const ANIMAL_BASE_COLORS: Record<AnimalType, { primary: string; secondary: string; accent: string }> = {
+export const ANIMAL_BASE_COLORS: Record<
+  AnimalType,
+  { primary: string; secondary: string; accent: string }
+> = {
   cow: {
     primary: FARM_COLORS.animals.cow.body,
     secondary: FARM_COLORS.animals.cow.spots,
@@ -66,66 +69,66 @@ export interface SpecialVariantDef {
 
 export const SPECIAL_VARIANTS: Record<AnimalType, SpecialVariantDef> = {
   cow: {
-    specialColor: '#8B4513', // Brown
-    specialName: 'Muddy Bessie',
-    ability: 'poop_shot',
-    description: 'Shoots fertilizer that grows bouncy bushes!',
+    specialColor: "#8B4513", // Brown
+    specialName: "Muddy Bessie",
+    ability: "poop_shot",
+    description: "Shoots fertilizer that grows bouncy bushes!",
     spawnWeight: 0.15,
   },
   chicken: {
-    specialColor: '#FFD700', // Gold
-    specialName: 'Golden Cluck',
-    ability: 'egg_bomb',
-    description: 'Lays explosive golden eggs!',
+    specialColor: "#FFD700", // Gold
+    specialName: "Golden Cluck",
+    ability: "egg_bomb",
+    description: "Lays explosive golden eggs!",
     spawnWeight: 0.12,
   },
   pig: {
-    specialColor: '#FF69B4', // Hot Pink
-    specialName: 'Mudslide',
-    ability: 'mud_splash',
-    description: 'Creates mud that slows falling animals!',
+    specialColor: "#FF69B4", // Hot Pink
+    specialName: "Mudslide",
+    ability: "mud_splash",
+    description: "Creates mud that slows falling animals!",
     spawnWeight: 0.15,
   },
   sheep: {
-    specialColor: '#1C1C1C', // Black
-    specialName: 'Shadow Wool',
-    ability: 'wool_shield',
-    description: 'Wraps stack in protective wool!',
-    spawnWeight: 0.10,
+    specialColor: "#1C1C1C", // Black
+    specialName: "Shadow Wool",
+    ability: "wool_shield",
+    description: "Wraps stack in protective wool!",
+    spawnWeight: 0.1,
   },
   goat: {
-    specialColor: '#808080', // Gray
-    specialName: 'Gruff',
-    ability: 'bleat_stun',
-    description: 'Bleats so loud it stuns nearby animals!',
+    specialColor: "#808080", // Gray
+    specialName: "Gruff",
+    ability: "bleat_stun",
+    description: "Bleats so loud it stuns nearby animals!",
     spawnWeight: 0.12,
   },
   duck: {
-    specialColor: '#4169E1', // Royal Blue  
-    specialName: 'Sir Quacksalot',
-    ability: 'feather_float',
-    description: 'Floats down super slowly on feathers!',
+    specialColor: "#4169E1", // Royal Blue
+    specialName: "Sir Quacksalot",
+    ability: "feather_float",
+    description: "Floats down super slowly on feathers!",
     spawnWeight: 0.18,
   },
   goose: {
-    specialColor: '#FFD700', // Gold
-    specialName: 'Mother Goose',
-    ability: 'honey_trap',
-    description: 'Creates a sticky golden landing zone!',
+    specialColor: "#FFD700", // Gold
+    specialName: "Mother Goose",
+    ability: "honey_trap",
+    description: "Creates a sticky golden landing zone!",
     spawnWeight: 0.08,
   },
   horse: {
-    specialColor: '#D2B48C', // Tan
-    specialName: 'Haymaker',
-    ability: 'hay_storm',
-    description: 'Summons floating hay platforms!',
-    spawnWeight: 0.10,
+    specialColor: "#D2B48C", // Tan
+    specialName: "Haymaker",
+    ability: "hay_storm",
+    description: "Summons floating hay platforms!",
+    spawnWeight: 0.1,
   },
   rooster: {
-    specialColor: '#F8F8FF', // Ghost White (Albino)
-    specialName: 'Dawn Caller',
-    ability: 'crow_call',
-    description: 'Crows to attract animals to center!',
+    specialColor: "#F8F8FF", // Ghost White (Albino)
+    specialName: "Dawn Caller",
+    ability: "crow_call",
+    description: "Crows to attract animals to center!",
     spawnWeight: 0.12,
   },
 };
@@ -139,11 +142,11 @@ export function createAnimalArchetype(
 ): AnimalArchetype {
   const baseColors = ANIMAL_BASE_COLORS[type];
   const specialDef = SPECIAL_VARIANTS[type];
-  
+
   if (isSpecial) {
     return {
       type,
-      variant: 'special',
+      variant: "special",
       primaryColor: specialDef.specialColor,
       secondaryColor: baseColors.secondary,
       accentColor: baseColors.accent,
@@ -152,10 +155,10 @@ export function createAnimalArchetype(
       specialName: specialDef.specialName,
     };
   }
-  
+
   return {
     type,
-    variant: 'normal',
+    variant: "normal",
     primaryColor: baseColors.primary,
     secondaryColor: baseColors.secondary,
     accentColor: baseColors.accent,
@@ -166,31 +169,41 @@ export function createAnimalArchetype(
  * Get a random animal type with weighted distribution
  */
 export function getRandomAnimalType(level: number): AnimalType {
-  const types: AnimalType[] = ['cow', 'chicken', 'pig', 'sheep', 'goat', 'duck', 'goose', 'horse', 'rooster'];
-  
+  const types: AnimalType[] = [
+    "cow",
+    "chicken",
+    "pig",
+    "sheep",
+    "goat",
+    "duck",
+    "goose",
+    "horse",
+    "rooster",
+  ];
+
   // Base weights - some animals are more common
   const weights: Record<AnimalType, number> = {
     chicken: 0.18,
     duck: 0.16,
     pig: 0.14,
     sheep: 0.12,
-    goat: 0.10,
-    cow: 0.10,
+    goat: 0.1,
+    cow: 0.1,
     goose: 0.08,
     rooster: 0.07,
     horse: 0.05,
   };
-  
+
   // Adjust weights based on level (rarer animals become more common)
   const levelBonus = Math.min(0.02, level * 0.002);
-  
+
   const roll = Math.random();
   let cumulative = 0;
-  
+
   for (const type of types) {
     let weight = weights[type];
     // Increase rare animal chances with level
-    if (type === 'horse' || type === 'goose') {
+    if (type === "horse" || type === "goose") {
       weight += levelBonus;
     }
     cumulative += weight;
@@ -198,8 +211,8 @@ export function getRandomAnimalType(level: number): AnimalType {
       return type;
     }
   }
-  
-  return 'chicken'; // Fallback
+
+  return "chicken"; // Fallback
 }
 
 /**
@@ -209,8 +222,8 @@ export function shouldBeSpecialVariant(type: AnimalType, level: number): boolean
   const specialDef = SPECIAL_VARIANTS[type];
   const baseChance = specialDef.spawnWeight;
   const levelBonus = Math.min(0.15, level * 0.01);
-  
-  return Math.random() < (baseChance + levelBonus);
+
+  return Math.random() < baseChance + levelBonus;
 }
 
 /**
@@ -218,11 +231,11 @@ export function shouldBeSpecialVariant(type: AnimalType, level: number): boolean
  */
 export function getAnimalSpawnWeight(type: AnimalType): number {
   const weights: Record<AnimalType, number> = {
-    chicken: 0.20,
+    chicken: 0.2,
     duck: 0.18,
     pig: 0.15,
     sheep: 0.12,
-    goat: 0.10,
+    goat: 0.1,
     cow: 0.08,
     goose: 0.07,
     rooster: 0.06,
@@ -235,21 +248,21 @@ export function getAnimalSpawnWeight(type: AnimalType): number {
  * Get animal display name
  */
 export function getAnimalDisplayName(archetype: AnimalArchetype): string {
-  if (archetype.variant === 'special' && archetype.specialName) {
+  if (archetype.variant === "special" && archetype.specialName) {
     return archetype.specialName;
   }
-  
+
   const names: Record<AnimalType, string> = {
-    cow: 'Cow',
-    chicken: 'Chicken',
-    pig: 'Pig',
-    sheep: 'Sheep',
-    goat: 'Goat',
-    duck: 'Duck',
-    goose: 'Goose',
-    horse: 'Horse',
-    rooster: 'Rooster',
+    cow: "Cow",
+    chicken: "Chicken",
+    pig: "Pig",
+    sheep: "Sheep",
+    goat: "Goat",
+    duck: "Duck",
+    goose: "Goose",
+    horse: "Horse",
+    rooster: "Rooster",
   };
-  
+
   return names[archetype.type];
 }

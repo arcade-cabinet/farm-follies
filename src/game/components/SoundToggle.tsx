@@ -4,8 +4,8 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { audioManager } from "../audio";
 import { feedback } from "@/platform";
+import { audioManager } from "../audio";
 
 interface SoundToggleProps {
   className?: string;

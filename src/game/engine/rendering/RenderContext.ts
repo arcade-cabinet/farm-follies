@@ -2,7 +2,7 @@
  * RenderContext - Wrapper around canvas context with game-specific utilities
  */
 
-import type { ScaleFactors } from '../core/ResponsiveScale';
+import type { ScaleFactors } from "../core/ResponsiveScale";
 
 export interface RenderState {
   screenShake: number;
@@ -13,7 +13,7 @@ export interface RenderState {
 export class RenderContext {
   readonly canvas: HTMLCanvasElement;
   readonly ctx: CanvasRenderingContext2D;
-  
+
   private _scale: ScaleFactors;
   private state: RenderState = {
     screenShake: 0,
@@ -23,8 +23,8 @@ export class RenderContext {
 
   constructor(canvas: HTMLCanvasElement, scale: ScaleFactors) {
     this.canvas = canvas;
-    const ctx = canvas.getContext('2d', { alpha: false });
-    if (!ctx) throw new Error('Failed to get canvas context');
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) throw new Error("Failed to get canvas context");
     this.ctx = ctx;
     this._scale = scale;
   }
@@ -68,14 +68,14 @@ export class RenderContext {
    */
   beginFrame(): void {
     this.ctx.save();
-    
+
     // Apply screen shake
     if (this.state.screenShake > 0.01) {
       const shakeX = (Math.random() - 0.5) * this.state.screenShake * 20;
       const shakeY = (Math.random() - 0.5) * this.state.screenShake * 20;
       this.ctx.translate(shakeX, shakeY);
     }
-    
+
     // Clear with slight oversize for shake
     this.ctx.clearRect(-10, -10, this.width + 20, this.height + 20);
   }
@@ -91,7 +91,7 @@ export class RenderContext {
       this.ctx.fillRect(0, 0, this.width, this.height);
       this.ctx.globalAlpha = 1;
     }
-    
+
     this.ctx.restore();
   }
 
@@ -104,7 +104,7 @@ export class RenderContext {
     if (this.state.screenShake < 0.01) {
       this.state.screenShake = 0;
     }
-    
+
     // Decay flash
     if (this.state.flashAlpha > 0) {
       this.state.flashAlpha -= dt / 200;
@@ -173,19 +173,19 @@ export class RenderContext {
    */
   drawDebugInfo(info: Record<string, string | number>): void {
     this.ctx.save();
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     this.ctx.fillRect(5, 5, 150, Object.keys(info).length * 15 + 10);
-    
-    this.ctx.fillStyle = '#fff';
-    this.ctx.font = '12px monospace';
-    this.ctx.textAlign = 'left';
-    
+
+    this.ctx.fillStyle = "#fff";
+    this.ctx.font = "12px monospace";
+    this.ctx.textAlign = "left";
+
     let y = 20;
     for (const [key, value] of Object.entries(info)) {
       this.ctx.fillText(`${key}: ${value}`, 10, y);
       y += 15;
     }
-    
+
     this.ctx.restore();
   }
 }
@@ -193,9 +193,6 @@ export class RenderContext {
 /**
  * Create a render context from a canvas element
  */
-export function createRenderContext(
-  canvas: HTMLCanvasElement,
-  scale: ScaleFactors
-): RenderContext {
+export function createRenderContext(canvas: HTMLCanvasElement, scale: ScaleFactors): RenderContext {
   return new RenderContext(canvas, scale);
 }

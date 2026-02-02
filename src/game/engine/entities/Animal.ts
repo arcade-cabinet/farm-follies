@@ -2,26 +2,17 @@
  * Animal - Farm animal entity with variants and special abilities
  */
 
-import { Entity, createEntity, generateEntityId } from './Entity';
-import { ANIMAL_ARCHETYPES, type AnimalSpawnTemplate, type AnimalVariant } from '../systems/SpawnSystem';
+import type { AnimalType } from "../../config";
+import {
+  ANIMAL_ARCHETYPES,
+  type AnimalSpawnTemplate,
+  type AnimalVariant,
+} from "../systems/SpawnSystem";
+import { createEntity, type Entity, generateEntityId } from "./Entity";
 
-export type AnimalType =
-  | 'chicken'
-  | 'duck'
-  | 'pig'
-  | 'goat'
-  | 'sheep'
-  | 'cow'
-  | 'goose'
-  | 'horse'
-  | 'rooster';
+export type { AnimalType };
 
-export type AnimalState = 
-  | 'falling' 
-  | 'caught' 
-  | 'stacked' 
-  | 'banking' 
-  | 'scattered';
+export type AnimalState = "falling" | "caught" | "stacked" | "banking" | "scattered";
 
 export interface AnimalComponents {
   /** Animal type */
@@ -53,7 +44,7 @@ export interface AnimalComponents {
 }
 
 export interface AnimalEntity extends Entity {
-  type: 'animal';
+  type: "animal";
   animal: AnimalComponents;
 }
 
@@ -67,7 +58,7 @@ export function createAnimal(
   y: number,
   archetype: AnimalSpawnTemplate
 ): AnimalEntity {
-  const baseEntity = createEntity('animal', x, y, {
+  const baseEntity = createEntity("animal", x, y, {
     width: archetype.width,
     height: archetype.height,
     velocityX: (Math.random() - 0.5) * 2,
@@ -76,11 +67,11 @@ export function createAnimal(
 
   return {
     ...baseEntity,
-    type: 'animal',
+    type: "animal",
     animal: {
       animalType,
       variant: variant.id,
-      state: 'falling',
+      state: "falling",
       stackIndex: -1,
       wobbleAngle: 0,
       wobbleVelocity: 0,
@@ -98,37 +89,40 @@ export function createAnimal(
 /**
  * Create a random animal based on level
  */
-export function createRandomAnimal(
-  x: number,
-  y: number,
-  level: number
-): AnimalEntity {
+export function createRandomAnimal(x: number, y: number, level: number): AnimalEntity {
   // Weight selection by level
   const animalTypes: AnimalType[] = [
-    'chicken', 'duck', 'pig', 'goat',
-    'sheep', 'cow', 'goose', 'horse', 'rooster'
+    "chicken",
+    "duck",
+    "pig",
+    "goat",
+    "sheep",
+    "cow",
+    "goose",
+    "horse",
+    "rooster",
   ];
-  
+
   // Build weighted list based on archetypes
   const weightedTypes: { type: AnimalType; weight: number }[] = [];
   let totalWeight = 0;
-  
+
   for (const type of animalTypes) {
     const archetype = ANIMAL_ARCHETYPES.get(type);
     if (!archetype) continue;
-    
+
     // Adjust weight based on level (heavier animals more common at higher levels)
     const levelBonus = level > 3 ? (archetype.stackWeight - 1) * (level - 3) * 0.1 : 0;
     const weight = archetype.baseWeight + levelBonus;
-    
+
     weightedTypes.push({ type, weight });
     totalWeight += weight;
   }
-  
+
   // Select type
   let random = Math.random() * totalWeight;
-  let selectedType: AnimalType = 'chicken';
-  
+  let selectedType: AnimalType = "chicken";
+
   for (const { type, weight } of weightedTypes) {
     random -= weight;
     if (random <= 0) {
@@ -136,25 +130,25 @@ export function createRandomAnimal(
       break;
     }
   }
-  
+
   const archetype = ANIMAL_ARCHETYPES.get(selectedType)!;
-  
+
   // Select variant
   const specialChance = 0.15 + level * 0.01;
   let variant = archetype.variants[0]; // Default to first variant
-  
+
   if (Math.random() < specialChance && archetype.variants.length > 1) {
-    const specialVariants = archetype.variants.filter(v => v.rarity !== 'common');
+    const specialVariants = archetype.variants.filter((v) => v.rarity !== "common");
     if (specialVariants.length > 0) {
       const rarityWeights: Record<string, number> = {
         uncommon: 0.6,
         rare: 0.3,
         legendary: 0.1,
       };
-      
+
       let totalRarityWeight = 0;
-      specialVariants.forEach(v => totalRarityWeight += rarityWeights[v.rarity] ?? 0.1);
-      
+      specialVariants.forEach((v) => (totalRarityWeight += rarityWeights[v.rarity] ?? 0.1));
+
       let rarityRandom = Math.random() * totalRarityWeight;
       for (const v of specialVariants) {
         rarityRandom -= rarityWeights[v.rarity] ?? 0.1;
@@ -165,12 +159,12 @@ export function createRandomAnimal(
       }
     }
   } else if (archetype.variants.length > 0) {
-    const commonVariants = archetype.variants.filter(v => v.rarity === 'common');
+    const commonVariants = archetype.variants.filter((v) => v.rarity === "common");
     if (commonVariants.length > 0) {
       variant = commonVariants[Math.floor(Math.random() * commonVariants.length)];
     }
   }
-  
+
   return createAnimal(selectedType, variant, x, y, archetype);
 }
 
@@ -186,7 +180,7 @@ export function catchAnimal(
     ...animal,
     animal: {
       ...animal.animal,
-      state: 'stacked',
+      state: "stacked",
       stackIndex,
       stackOffset,
     },
@@ -204,12 +198,13 @@ export function updateAnimalWobble(
 ): AnimalEntity {
   const dampingFactor = 0.98;
   const springConstant = 5;
-  
+
   // Spring physics
   const springForce = -animal.animal.wobbleAngle * springConstant;
-  const newVelocity = (animal.animal.wobbleVelocity + springForce * (dt / 1000) + wobbleForce) * dampingFactor;
+  const newVelocity =
+    (animal.animal.wobbleVelocity + springForce * (dt / 1000) + wobbleForce) * dampingFactor;
   const newAngle = animal.animal.wobbleAngle + newVelocity * (dt / 1000);
-  
+
   return {
     ...animal,
     animal: {
@@ -223,15 +218,17 @@ export function updateAnimalWobble(
 /**
  * Get render position including wobble offset
  */
-export function getAnimalRenderPosition(
-  animal: AnimalEntity
-): { x: number; y: number; rotation: number } {
+export function getAnimalRenderPosition(animal: AnimalEntity): {
+  x: number;
+  y: number;
+  rotation: number;
+} {
   const { position, rotation } = animal.transform;
   const { wobbleAngle, stackOffset } = animal.animal;
-  
+
   // Calculate horizontal offset from wobble
   const wobbleOffset = Math.sin(wobbleAngle) * (animal.bounds?.height ?? 50) * 0.5;
-  
+
   return {
     x: position.x + stackOffset + wobbleOffset,
     y: position.y,
@@ -264,7 +261,7 @@ export function useAbility(animal: AnimalEntity, cooldownMs: number): AnimalEnti
  */
 export function updateAbilityCooldown(animal: AnimalEntity, dt: number): AnimalEntity {
   if (animal.animal.abilityCooldown <= 0) return animal;
-  
+
   return {
     ...animal,
     animal: {
@@ -286,5 +283,5 @@ export function getAnimalSpawnTemplate(animal: AnimalEntity): AnimalSpawnTemplat
  */
 export function getAnimalVariant(animal: AnimalEntity): AnimalVariant | undefined {
   const archetype = ANIMAL_ARCHETYPES.get(animal.animal.animalType);
-  return archetype?.variants.find(v => v.id === animal.animal.variant);
+  return archetype?.variants.find((v) => v.id === animal.animal.variant);
 }

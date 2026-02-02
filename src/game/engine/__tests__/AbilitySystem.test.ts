@@ -1,23 +1,23 @@
 import { describe, expect, it } from "vitest";
-import {
-  ABILITY_CONFIGS,
-  createAbilitySystemState,
-  activateAbility,
-  updateAbilityEffects,
-  consumeHoneyTrapCatch,
-  updateStackAbilityCooldowns,
-  resolveAbilityType,
-  findTappedAbilityAnimal,
-  getFeatherFloatMultiplier,
-  getMudSlowFactor,
-  checkHayPlatformBounce,
-  getAbilityIndicators,
-  getActiveEffectVisuals,
-  type AbilitySystemState,
-  type AbilityEffect,
-} from "../systems/AbilitySystem";
 import type { AnimalEntity } from "../entities/Animal";
 import type { PlayerEntity } from "../entities/Player";
+import {
+  ABILITY_CONFIGS,
+  type AbilityEffect,
+  type AbilitySystemState,
+  activateAbility,
+  checkHayPlatformBounce,
+  consumeHoneyTrapCatch,
+  createAbilitySystemState,
+  findTappedAbilityAnimal,
+  getAbilityIndicators,
+  getActiveEffectVisuals,
+  getFeatherFloatMultiplier,
+  getMudSlowFactor,
+  resolveAbilityType,
+  updateAbilityEffects,
+  updateStackAbilityCooldowns,
+} from "../systems/AbilitySystem";
 
 // ---------------------------------------------------------------------------
 // Mock helpers
@@ -54,11 +54,7 @@ function mockAnimalEntity(overrides: Partial<AnimalEntity> = {}): AnimalEntity {
   } as AnimalEntity;
 }
 
-function mockFallingAnimal(
-  id: string,
-  x: number,
-  y: number
-): AnimalEntity {
+function mockFallingAnimal(id: string, x: number, y: number): AnimalEntity {
   return mockAnimalEntity({
     id,
     transform: {
@@ -149,7 +145,16 @@ describe("AbilitySystem", () => {
     });
 
     it("active abilities have positive cooldowns", () => {
-      const active = ["poop_shot", "egg_bomb", "mud_splash", "wool_shield", "bleat_stun", "honey_trap", "crow_call", "hay_storm"];
+      const active = [
+        "poop_shot",
+        "egg_bomb",
+        "mud_splash",
+        "wool_shield",
+        "bleat_stun",
+        "honey_trap",
+        "crow_call",
+        "hay_storm",
+      ];
       for (const t of active) {
         expect(ABILITY_CONFIGS[t].cooldown).toBeGreaterThan(0);
       }
@@ -670,7 +675,12 @@ describe("AbilitySystem", () => {
 
     it("returns 1.0 for non-duck ability animals", () => {
       const animal = mockAnimalEntity({
-        animal: { ...mockAnimalEntity().animal, animalType: "cow", abilityReady: true, state: "falling" },
+        animal: {
+          ...mockAnimalEntity().animal,
+          animalType: "cow",
+          abilityReady: true,
+          state: "falling",
+        },
       } as Partial<AnimalEntity>);
       expect(getFeatherFloatMultiplier(animal)).toBe(1.0);
     });

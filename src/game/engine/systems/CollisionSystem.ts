@@ -3,14 +3,14 @@
  * Handles all entity-to-entity collision logic
  */
 
-import type { 
-  EntityState, 
-  AnimalState, 
-  PlayerState, 
-  BushState, 
+import type {
+  AnimalState,
+  BushState,
+  EntityState,
+  PlayerState,
   PowerUpState,
-  ProjectileState 
-} from '../state/GameState';
+  ProjectileState,
+} from "../state/GameState";
 
 // Collision result types
 export interface CollisionResult {
@@ -22,7 +22,7 @@ export interface CollisionResult {
 
 export interface CatchResult {
   caught: boolean;
-  catchPosition: 'left' | 'center' | 'right';
+  catchPosition: "left" | "center" | "right";
   relativeX: number; // -1 to 1, where animal landed relative to player center
 }
 
@@ -48,7 +48,7 @@ export function checkAABBCollision(a: BoundingBox, b: BoundingBox): CollisionRes
   const aBottom = a.y + a.height;
   const bRight = b.x + b.width;
   const bBottom = b.y + b.height;
-  
+
   // Check for no collision
   if (a.x >= bRight || aRight <= b.x || a.y >= bBottom || aBottom <= b.y) {
     return {
@@ -58,24 +58,24 @@ export function checkAABBCollision(a: BoundingBox, b: BoundingBox): CollisionRes
       penetration: 0,
     };
   }
-  
+
   // Calculate overlap
   const overlapX = Math.min(aRight, bRight) - Math.max(a.x, b.x);
   const overlapY = Math.min(aBottom, bBottom) - Math.max(a.y, b.y);
-  
+
   // Determine collision normal (direction of minimum penetration)
   let normalX = 0;
   let normalY = 0;
   let penetration: number;
-  
+
   if (overlapX < overlapY) {
     penetration = overlapX;
-    normalX = (a.x + a.width / 2) < (b.x + b.width / 2) ? -1 : 1;
+    normalX = a.x + a.width / 2 < b.x + b.width / 2 ? -1 : 1;
   } else {
     penetration = overlapY;
-    normalY = (a.y + a.height / 2) < (b.y + b.height / 2) ? -1 : 1;
+    normalY = a.y + a.height / 2 < b.y + b.height / 2 ? -1 : 1;
   }
-  
+
   return {
     collided: true,
     overlap: { x: overlapX, y: overlapY },
@@ -95,7 +95,7 @@ export function checkCircleCollision(
   const dy = b.y - a.y;
   const distance = Math.sqrt(dx * dx + dy * dy);
   const combinedRadius = a.radius + b.radius;
-  
+
   if (distance >= combinedRadius) {
     return {
       collided: false,
@@ -104,11 +104,11 @@ export function checkCircleCollision(
       penetration: 0,
     };
   }
-  
+
   const penetration = combinedRadius - distance;
   const normalX = distance > 0 ? dx / distance : 0;
   const normalY = distance > 0 ? dy / distance : 1;
-  
+
   return {
     collided: true,
     overlap: { x: penetration * Math.abs(normalX), y: penetration * Math.abs(normalY) },
@@ -155,13 +155,13 @@ export function getStackTopPosition(
       y: player.y,
     };
   }
-  
+
   // Calculate total stack height
   let stackHeight = 0;
-  stackedAnimals.forEach(animal => {
+  stackedAnimals.forEach((animal) => {
     stackHeight += animal.height * animal.scale * 0.7; // Overlap factor
   });
-  
+
   return {
     x: player.x + player.width / 2,
     y: player.y - stackHeight,
@@ -178,7 +178,7 @@ export function checkAnimalCatch(
 ): CatchResult {
   const animalBounds = getEntityBounds(animal);
   const catchZone = getPlayerCatchZone(player);
-  
+
   // If player has stacked animals, check catch at stack top
   if (stackedAnimals.length > 0) {
     const stackTop = getStackTopPosition(player, stackedAnimals);
@@ -188,35 +188,35 @@ export function checkAnimalCatch(
       width: player.width * 1.2,
       height: animal.height,
     };
-    
+
     const stackCollision = checkAABBCollision(animalBounds, stackCatchZone);
     if (stackCollision.collided) {
       const relativeX = (animal.x + animal.width / 2 - stackTop.x) / (player.width * 0.6);
       return {
         caught: true,
-        catchPosition: relativeX < -0.3 ? 'left' : relativeX > 0.3 ? 'right' : 'center',
+        catchPosition: relativeX < -0.3 ? "left" : relativeX > 0.3 ? "right" : "center",
         relativeX: Math.max(-1, Math.min(1, relativeX)),
       };
     }
   }
-  
+
   // Check base player catch zone
   const baseCollision = checkAABBCollision(animalBounds, catchZone);
   if (baseCollision.collided) {
     const playerCenterX = player.x + player.width / 2;
     const animalCenterX = animal.x + animal.width / 2;
     const relativeX = (animalCenterX - playerCenterX) / (player.width * 0.6);
-    
+
     return {
       caught: true,
-      catchPosition: relativeX < -0.3 ? 'left' : relativeX > 0.3 ? 'right' : 'center',
+      catchPosition: relativeX < -0.3 ? "left" : relativeX > 0.3 ? "right" : "center",
       relativeX: Math.max(-1, Math.min(1, relativeX)),
     };
   }
-  
+
   return {
     caught: false,
-    catchPosition: 'center',
+    catchPosition: "center",
     relativeX: 0,
   };
 }
@@ -232,45 +232,43 @@ export function checkAnimalMissed(
   // Missed if animal bottom is below player bottom
   const animalBottom = animal.y + animal.height * animal.scale;
   const playerBottom = player.y + player.height;
-  
+
   return animalBottom > playerBottom + 20; // Small buffer
 }
 
 /**
  * Check if an animal bounces off a bush
  */
-export function checkBushBounce(
-  animal: AnimalState,
-  bush: BushState
-): BounceResult {
+export function checkBushBounce(animal: AnimalState, bush: BushState): BounceResult {
   const animalBounds = getEntityBounds(animal);
   const bushBounds = getEntityBounds(bush);
-  
+
   // Only bounce if bush is grown enough
   if (bush.growthStage < 0.5) {
     return { bounced: false, bounceVelocity: { x: 0, y: 0 }, bouncePosition: { x: 0, y: 0 } };
   }
-  
+
   const collision = checkAABBCollision(animalBounds, bushBounds);
-  
-  if (collision.collided && animal.velocityY > 0) { // Only bounce if falling
+
+  if (collision.collided && animal.velocityY > 0) {
+    // Only bounce if falling
     const bounceStrength = bush.bounceStrength * bush.growthStage;
     const bounceVelocityY = -Math.abs(animal.velocityY) * bounceStrength * 1.5;
-    
+
     // Add some horizontal variation based on where it hit
-    const hitOffsetX = (animal.x + animal.width / 2) - (bush.x + bush.width / 2);
+    const hitOffsetX = animal.x + animal.width / 2 - (bush.x + bush.width / 2);
     const bounceVelocityX = hitOffsetX * 0.1;
-    
+
     return {
       bounced: true,
       bounceVelocity: { x: bounceVelocityX, y: bounceVelocityY },
-      bouncePosition: { 
-        x: animal.x + animal.width / 2, 
-        y: bush.y 
+      bouncePosition: {
+        x: animal.x + animal.width / 2,
+        y: bush.y,
       },
     };
   }
-  
+
   return { bounced: false, bounceVelocity: { x: 0, y: 0 }, bouncePosition: { x: 0, y: 0 } };
 }
 
@@ -283,13 +281,13 @@ export function checkPowerUpCollection(
   stackedAnimals: AnimalState[]
 ): boolean {
   const powerUpBounds = getEntityBounds(powerUp);
-  
+
   // Check player collision
   const playerBounds = getEntityBounds(player);
   if (checkAABBCollision(powerUpBounds, playerBounds).collided) {
     return true;
   }
-  
+
   // Check stacked animals collision
   for (const animal of stackedAnimals) {
     const animalBounds = getEntityBounds(animal);
@@ -297,7 +295,7 @@ export function checkPowerUpCollection(
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -309,14 +307,14 @@ export function checkProjectileCollision(
   targets: EntityState[]
 ): EntityState | null {
   const projectileBounds = getEntityBounds(projectile);
-  
+
   for (const target of targets) {
     const targetBounds = getEntityBounds(target);
     if (checkAABBCollision(projectileBounds, targetBounds).collided) {
       return target;
     }
   }
-  
+
   return null;
 }
 
@@ -330,10 +328,7 @@ export function isInPlayArea(
   canvasHeight: number,
   bankWidth: number
 ): boolean {
-  return x >= 0 && 
-         x <= canvasWidth - bankWidth && 
-         y >= 0 && 
-         y <= canvasHeight;
+  return x >= 0 && x <= canvasWidth - bankWidth && y >= 0 && y <= canvasHeight;
 }
 
 /**
@@ -347,7 +342,7 @@ export function clampToPlayArea(
 ): { x: number; y: number } {
   const maxX = canvasWidth - bankWidth - entity.width * entity.scale;
   const maxY = canvasHeight - entity.height * entity.scale;
-  
+
   return {
     x: Math.max(0, Math.min(maxX, entity.x)),
     y: Math.max(0, Math.min(maxY, entity.y)),
@@ -366,16 +361,16 @@ export function calculateMagneticPull(
   const entityCenterY = entity.y + entity.height / 2;
   const playerCenterX = player.x + player.width / 2;
   const playerCenterY = player.y + player.height / 2;
-  
+
   const dx = playerCenterX - entityCenterX;
   const dy = playerCenterY - entityCenterY;
   const distance = Math.sqrt(dx * dx + dy * dy);
-  
+
   if (distance < 10) return { x: 0, y: 0 };
-  
+
   // Magnetic force falls off with distance
   const force = magnetStrength / (1 + distance * 0.01);
-  
+
   return {
     x: (dx / distance) * force,
     y: (dy / distance) * force,
@@ -391,28 +386,25 @@ export function batchCheckAnimalCatches(
   stackedAnimals: AnimalState[]
 ): Map<string, CatchResult> {
   const results = new Map<string, CatchResult>();
-  
+
   for (const animal of fallingAnimals) {
     const result = checkAnimalCatch(animal, player, stackedAnimals);
     results.set(animal.id, result);
   }
-  
+
   return results;
 }
 
 /**
  * Batch collision check for multiple bushes
  */
-export function batchCheckBushBounces(
-  animal: AnimalState,
-  bushes: BushState[]
-): BounceResult {
+export function batchCheckBushBounces(animal: AnimalState, bushes: BushState[]): BounceResult {
   for (const bush of bushes) {
     const result = checkBushBounce(animal, bush);
     if (result.bounced) {
       return result;
     }
   }
-  
+
   return { bounced: false, bounceVelocity: { x: 0, y: 0 }, bouncePosition: { x: 0, y: 0 } };
 }

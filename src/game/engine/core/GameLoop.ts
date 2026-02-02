@@ -1,6 +1,6 @@
 /**
  * GameLoop - Frame-rate independent game loop with fixed timestep physics
- * 
+ *
  * Responsibilities:
  * - Manages requestAnimationFrame lifecycle
  * - Provides fixed timestep for physics (deterministic)
@@ -44,16 +44,16 @@ const DEFAULT_CONFIG: GameLoopConfig = {
 export class GameLoop {
   private config: GameLoopConfig;
   private callbacks: GameLoopCallbacks;
-  
+
   private animationId: number | null = null;
   private isRunning = false;
   private isPaused = false;
-  
+
   // Timing
   private lastFrameTime = 0;
   private accumulator = 0;
   private fixedDeltaTime: number;
-  
+
   // Metrics
   private metrics: PerformanceMetrics = {
     fps: 0,
@@ -77,14 +77,14 @@ export class GameLoop {
    */
   start(): void {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
     this.isPaused = false;
     this.lastFrameTime = performance.now();
     this.accumulator = 0;
     this.lastMetricsTime = this.lastFrameTime;
     this.frameCount = 0;
-    
+
     this.tick();
   }
 
@@ -156,7 +156,7 @@ export class GameLoop {
     if (this.config.enableMetrics) {
       this.fpsAccumulator += frameTime;
       this.frameCount++;
-      
+
       if (now - this.lastMetricsTime >= 1000) {
         this.metrics.fps = Math.round((this.frameCount * 1000) / this.fpsAccumulator);
         this.frameCount = 0;
@@ -172,12 +172,12 @@ export class GameLoop {
       // Fixed timestep updates
       let fixedUpdateCount = 0;
       const updateStart = performance.now();
-      
+
       while (this.accumulator >= this.fixedDeltaTime) {
         this.callbacks.fixedUpdate(this.fixedDeltaTime);
         this.accumulator -= this.fixedDeltaTime;
         fixedUpdateCount++;
-        
+
         // Safety: prevent infinite loop if fixedUpdate takes too long
         if (fixedUpdateCount > 10) {
           this.accumulator = 0;
@@ -187,7 +187,7 @@ export class GameLoop {
 
       // Interpolation alpha for smooth rendering
       const alpha = this.accumulator / this.fixedDeltaTime;
-      
+
       // Variable update for non-physics stuff
       this.callbacks.update(frameTime, alpha);
 
@@ -201,7 +201,7 @@ export class GameLoop {
     const renderStart = performance.now();
     const alpha = this.accumulator / this.fixedDeltaTime;
     this.callbacks.render(alpha);
-    
+
     if (this.config.enableMetrics) {
       this.metrics.renderTime = performance.now() - renderStart;
     }
@@ -214,10 +214,7 @@ export class GameLoop {
  * Create a simple game loop without fixed timestep
  * (for simpler games that don't need deterministic physics)
  */
-export function createSimpleLoop(
-  onUpdate: (dt: number) => void,
-  onRender: () => void
-): GameLoop {
+export function createSimpleLoop(onUpdate: (dt: number) => void, onRender: () => void): GameLoop {
   return new GameLoop({
     fixedUpdate: () => {},
     update: (dt) => onUpdate(dt),

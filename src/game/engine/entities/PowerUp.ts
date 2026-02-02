@@ -2,9 +2,9 @@
  * PowerUp - Falling power-up entity
  */
 
-import { Entity, createEntity } from "./Entity";
 import type { PowerUpType } from "../../config";
-import { POWER_UPS, GAME_CONFIG } from "../../config";
+import { GAME_CONFIG, POWER_UPS } from "../../config";
+import { createEntity, type Entity } from "./Entity";
 
 export interface PowerUpComponents {
   /** The power-up type */
@@ -25,11 +25,7 @@ export interface PowerUpEntity extends Entity {
 /**
  * Create a power-up entity
  */
-export function createPowerUp(
-  x: number,
-  y: number,
-  type: PowerUpType,
-): PowerUpEntity {
+export function createPowerUp(x: number, y: number, type: PowerUpType): PowerUpEntity {
   const config = POWER_UPS[type];
   const size = 40;
 
@@ -57,10 +53,7 @@ export function createPowerUp(
 /**
  * Update a power-up's bob animation
  */
-export function updatePowerUpBob(
-  powerUp: PowerUpEntity,
-  dt: number,
-): PowerUpEntity {
+export function updatePowerUpBob(powerUp: PowerUpEntity, dt: number): PowerUpEntity {
   const { bobSpeed, bobAmount } = GAME_CONFIG.powerUps;
   const newPhase = powerUp.powerup.bobPhase + bobSpeed * dt;
 

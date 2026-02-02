@@ -32,7 +32,11 @@ export function AbilityIndicator({ abilityType, cooldownPercent, isReady }: Abil
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - cooldownPercent);
 
-  const style = ABILITY_STYLES[abilityType] ?? { color: "#888", glow: "rgba(136,136,136,0.6)", label: "?" };
+  const style = ABILITY_STYLES[abilityType] ?? {
+    color: "#888",
+    glow: "rgba(136,136,136,0.6)",
+    label: "?",
+  };
 
   return (
     <div

@@ -15,13 +15,7 @@ interface PauseMenuProps {
   level: number;
 }
 
-export function PauseMenu({
-  onResume,
-  onMainMenu,
-  onRestart,
-  score,
-  level,
-}: PauseMenuProps) {
+export function PauseMenu({ onResume, onMainMenu, onRestart, score, level }: PauseMenuProps) {
   const { playClick, playBack } = useUISound();
 
   const handleResume = useCallback(() => {
@@ -95,34 +89,19 @@ export function PauseMenu({
           style={{ backgroundColor: "rgba(139, 69, 19, 0.1)" }}
         >
           <div className="text-center">
-            <p
-              className="text-xs"
-              style={{ color: FARM_COLORS.ui.text, opacity: 0.6 }}
-            >
+            <p className="text-xs" style={{ color: FARM_COLORS.ui.text, opacity: 0.6 }}>
               SCORE
             </p>
-            <p
-              className="game-font text-lg"
-              style={{ color: FARM_COLORS.ui.text }}
-            >
+            <p className="game-font text-lg" style={{ color: FARM_COLORS.ui.text }}>
               {score.toLocaleString()}
             </p>
           </div>
-          <div
-            className="w-px"
-            style={{ backgroundColor: FARM_COLORS.fence.post }}
-          />
+          <div className="w-px" style={{ backgroundColor: FARM_COLORS.fence.post }} />
           <div className="text-center">
-            <p
-              className="text-xs"
-              style={{ color: FARM_COLORS.ui.text, opacity: 0.6 }}
-            >
+            <p className="text-xs" style={{ color: FARM_COLORS.ui.text, opacity: 0.6 }}>
               LEVEL
             </p>
-            <p
-              className="game-font text-lg"
-              style={{ color: FARM_COLORS.ui.text }}
-            >
+            <p className="game-font text-lg" style={{ color: FARM_COLORS.ui.text }}>
               {level}
             </p>
           </div>
@@ -217,11 +196,7 @@ export function PauseButton({ onClick }: { onClick: () => void }) {
       }}
       aria-label="Pause game"
     >
-      <svg
-        viewBox="0 0 24 24"
-        className="w-6 h-6"
-        fill={FARM_COLORS.ui.textLight}
-      >
+      <svg viewBox="0 0 24 24" className="w-6 h-6" fill={FARM_COLORS.ui.textLight}>
         <rect x="6" y="4" width="4" height="16" rx="1" />
         <rect x="14" y="4" width="4" height="16" rx="1" />
       </svg>

@@ -1,6 +1,11 @@
 /**
  * Achievement System
  * Track and unlock achievements based on gameplay
+ *
+ * TODO: Migrate localStorage calls to platform storage abstraction
+ * (src/platform/storage.ts) for native Capacitor Preferences support.
+ * The platform storage API is async, so loadStats, saveStats,
+ * loadAchievements, and checkAchievements would need to become async.
  */
 
 export interface Achievement {
@@ -266,7 +271,16 @@ function getDefaultStats(): GameStats {
 }
 
 /**
- * Load stats from localStorage
+ * Validate that a parsed value is a finite number, falling back to a default.
+ */
+function asNumber(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+/**
+ * Load stats from localStorage with runtime type validation.
+ * Each field is individually checked to guard against corrupted or
+ * tampered storage data.
  */
 export function loadStats(): GameStats {
   if (typeof window === "undefined") return getDefaultStats();
@@ -274,7 +288,28 @@ export function loadStats(): GameStats {
   try {
     const saved = localStorage.getItem(STATS_KEY);
     if (saved) {
-      return { ...getDefaultStats(), ...JSON.parse(saved) };
+      const parsed: unknown = JSON.parse(saved);
+      if (parsed === null || typeof parsed !== "object") {
+        return getDefaultStats();
+      }
+      const raw = parsed as Record<string, unknown>;
+      const defaults = getDefaultStats();
+      return {
+        totalScore: asNumber(raw.totalScore, defaults.totalScore),
+        highScore: asNumber(raw.highScore, defaults.highScore),
+        totalCatches: asNumber(raw.totalCatches, defaults.totalCatches),
+        perfectCatches: asNumber(raw.perfectCatches, defaults.perfectCatches),
+        totalGames: asNumber(raw.totalGames, defaults.totalGames),
+        maxStack: asNumber(raw.maxStack, defaults.maxStack),
+        maxCombo: asNumber(raw.maxCombo, defaults.maxCombo),
+        totalBanked: asNumber(raw.totalBanked, defaults.totalBanked),
+        abilitiesUsed: asNumber(raw.abilitiesUsed, defaults.abilitiesUsed),
+        animalsStunned: asNumber(raw.animalsStunned, defaults.animalsStunned),
+        powerUpsCollected: asNumber(raw.powerUpsCollected, defaults.powerUpsCollected),
+        livesEarned: asNumber(raw.livesEarned, defaults.livesEarned),
+        totalPlayTime: asNumber(raw.totalPlayTime, defaults.totalPlayTime),
+        consecutivePerfects: asNumber(raw.consecutivePerfects, defaults.consecutivePerfects),
+      };
     }
   } catch (e) {
     console.error("Failed to load stats:", e);

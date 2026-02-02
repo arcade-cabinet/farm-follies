@@ -11,6 +11,8 @@
       "src/**/*.ts",
       "src/**/*.tsx",
       "e2e/**/*.ts",
+      "scripts/**/*.ts",
+      "electron/src/**/*.ts",
       "*.json",
       "*.md",
       "*.config.ts",

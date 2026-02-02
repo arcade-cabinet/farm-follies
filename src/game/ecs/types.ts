@@ -3,6 +3,8 @@
  * Miniplex-style archetype, component, and system definitions
  */
 
+import type { AnimalType } from "../config";
+
 // Component Types
 export interface Position {
   x: number;
@@ -66,32 +68,23 @@ export interface Bush {
 }
 
 // Ability Types
-export type AbilityType = 
-  | 'poop_shot' // Brown Cow - shoots poop that grows bushes
-  | 'egg_bomb' // Golden Chicken - explosive eggs
-  | 'mud_splash' // Pink Pig - slows nearby animals
-  | 'wool_shield' // Black Sheep - temporary invincibility
-  | 'milk_heal' // Spotted Cow - heals player
-  | 'crow_call' // Albino Rooster - attracts animals to center
-  | 'hay_storm' // Tan Horse - creates floating hay platforms
-  | 'feather_float' // Blue Duck - slows own fall dramatically
-  | 'honey_trap' // Golden Goose - sticky landing zone
-  | 'bleat_stun'; // Gray Goat - stuns nearby falling animals
+export type AbilityType =
+  | "poop_shot" // Brown Cow - shoots poop that grows bushes
+  | "egg_bomb" // Golden Chicken - explosive eggs
+  | "mud_splash" // Pink Pig - slows nearby animals
+  | "wool_shield" // Black Sheep - temporary invincibility
+  | "milk_heal" // Spotted Cow - heals player
+  | "crow_call" // Albino Rooster - attracts animals to center
+  | "hay_storm" // Tan Horse - creates floating hay platforms
+  | "feather_float" // Blue Duck - slows own fall dramatically
+  | "honey_trap" // Golden Goose - sticky landing zone
+  | "bleat_stun"; // Gray Goat - stuns nearby falling animals
 
-// Animal Types
-export type AnimalType = 
-  | 'cow'
-  | 'chicken' 
-  | 'pig'
-  | 'sheep'
-  | 'goat'
-  | 'duck'
-  | 'goose'
-  | 'horse'
-  | 'rooster';
+// Animal Types (re-exported from config.ts — canonical definition)
+export type { AnimalType };
 
 // Animal Variants (special colored versions with unique abilities)
-export type AnimalVariant = 'normal' | 'special';
+export type AnimalVariant = "normal" | "special";
 
 // Complete Animal Definition
 export interface AnimalArchetype {
@@ -108,36 +101,31 @@ export interface AnimalArchetype {
 }
 
 // Entity state
-export type EntityState = 
-  | 'falling'
-  | 'stacked' 
-  | 'banking'
-  | 'scattered'
-  | 'base';
+export type EntityState = "falling" | "stacked" | "banking" | "scattered" | "base";
 
 // AI Behavior Types (for falling animals)
 export type BehaviorType =
-  | 'normal'    // Falls straight with drift
-  | 'seeker'    // Aims at player
-  | 'evader'    // Avoids player
-  | 'zigzag'    // Oscillates side to side
-  | 'dive'      // Fast dive attack
-  | 'floater'   // Slow drifting fall
-  | 'swooper';  // Arcing motion
+  | "normal" // Falls straight with drift
+  | "seeker" // Aims at player
+  | "evader" // Avoids player
+  | "zigzag" // Oscillates side to side
+  | "dive" // Fast dive attack
+  | "floater" // Slow drifting fall
+  | "swooper"; // Arcing motion
 
 // Full Entity type combining components
 export interface FarmEntity {
   // Identity
   id: string;
-  entityType: 'animal' | 'powerup' | 'projectile' | 'bush' | 'player' | 'tornado';
-  
+  entityType: "animal" | "powerup" | "projectile" | "bush" | "player" | "tornado";
+
   // Core components
   position: Position;
   velocity: Velocity;
   rotation: Rotation;
   scale: Scale;
   renderable: Renderable;
-  
+
   // Optional components based on entity type
   wobble?: Wobble;
   stackable?: Stackable;
@@ -145,14 +133,14 @@ export interface FarmEntity {
   specialAbility?: SpecialAbility;
   bush?: Bush;
   health?: Health;
-  
+
   // State
   state: EntityState;
-  
+
   // Animal-specific
   animal?: AnimalArchetype;
   behaviorType?: BehaviorType;
-  
+
   // Visual state
   isStressed?: boolean;
   isConfused?: boolean;

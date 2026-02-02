@@ -1,32 +1,32 @@
 /**
  * ResponsiveScale - Handles responsive scaling for different screen sizes
- * 
+ *
  * Reference: iPhone SE portrait (375x667) = scale 1.0
  */
 
-import { GAME_CONFIG } from '../../config';
+import { GAME_CONFIG } from "../../config";
 
 export interface ScaleFactors {
   /** Overall scale factor (0.65 - 1.5) */
   factor: number;
-  
+
   /** Scaled entity dimensions */
   entityWidth: number;
   entityHeight: number;
-  
+
   /** Scaled layout dimensions */
   bankWidth: number;
   safeZoneTop: number;
-  
+
   /** Physics adjustments */
   catchTolerance: number;
-  
+
   /** Touch target scale for mobile */
   touchScale: number;
-  
+
   /** Whether in portrait orientation */
   isPortrait: boolean;
-  
+
   /** Screen dimensions */
   screenWidth: number;
   screenHeight: number;
@@ -40,10 +40,10 @@ const { layout } = GAME_CONFIG;
 export function calculateScale(width: number, height: number): ScaleFactors {
   const minDim = Math.min(width, height);
   const isPortrait = height > width;
-  
+
   // Base reference: 375px width (iPhone SE)
   let factor: number;
-  
+
   if (isPortrait) {
     // Portrait: scale based on width, with minimum playable area
     factor = Math.max(0.65, Math.min(1.4, width / 375));
@@ -51,25 +51,25 @@ export function calculateScale(width: number, height: number): ScaleFactors {
     // Landscape: more generous scaling
     factor = Math.max(0.7, Math.min(1.5, minDim / 400));
   }
-  
+
   // Entity size scales with factor but has hard limits for playability
   const baseEntityWidth = GAME_CONFIG.animal.width;
   const baseEntityHeight = GAME_CONFIG.animal.height;
   const entityWidth = Math.max(45, Math.min(100, baseEntityWidth * factor));
   const entityHeight = Math.max(40, Math.min(85, baseEntityHeight * factor));
-  
+
   // Bank width scales but stays usable
   const bankWidth = Math.max(45, Math.min(80, layout.bankWidth * factor));
-  
+
   // Safe zone scales with screen
   const safeZoneTop = Math.max(50, Math.min(120, layout.safeZoneTop * factor));
-  
+
   // Catch tolerance increases on smaller screens for better UX
   const catchTolerance = factor < 0.85 ? 1.2 : 1.0;
-  
+
   // Touch targets are larger on mobile
   const touchScale = width < 500 ? 1.25 : 1.0;
-  
+
   return {
     factor,
     entityWidth,
@@ -116,11 +116,7 @@ export function scaleValue(value: number, scale: ScaleFactors): number {
 /**
  * Scale a position to screen coordinates
  */
-export function scalePosition(
-  x: number,
-  y: number,
-  scale: ScaleFactors
-): { x: number; y: number } {
+export function scalePosition(x: number, y: number, scale: ScaleFactors): { x: number; y: number } {
   return {
     x: x * scale.factor,
     y: y * scale.factor,
@@ -130,11 +126,7 @@ export function scalePosition(
 /**
  * Check if a point is within the playable area
  */
-export function isInPlayableArea(
-  x: number,
-  y: number,
-  scale: ScaleFactors
-): boolean {
+export function isInPlayableArea(x: number, y: number, scale: ScaleFactors): boolean {
   const area = getPlayableArea(scale);
   return x >= area.minX && x <= area.maxX && y >= area.minY && y <= area.maxY;
 }
@@ -163,7 +155,7 @@ export function createScaleObserver(
 ): () => void {
   let currentScale = calculateScale(element.clientWidth, element.clientHeight);
   onScaleChange(currentScale);
-  
+
   const handleResize = () => {
     const newScale = calculateScale(element.clientWidth, element.clientHeight);
     if (
@@ -174,14 +166,14 @@ export function createScaleObserver(
       onScaleChange(currentScale);
     }
   };
-  
+
   // Use ResizeObserver if available, fallback to window resize
-  if (typeof ResizeObserver !== 'undefined') {
+  if (typeof ResizeObserver !== "undefined") {
     const observer = new ResizeObserver(handleResize);
     observer.observe(element);
     return () => observer.disconnect();
   } else {
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }
 }

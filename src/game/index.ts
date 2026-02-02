@@ -15,6 +15,7 @@ export {
 // Audio
 export { audioManager, type SoundType } from "./audio";
 export { AchievementToast, AchievementToastList } from "./components/AchievementToast";
+export { BankButton } from "./components/BankButton";
 export { GameButton } from "./components/GameButton";
 export { GameCard } from "./components/GameCard";
 // Components
@@ -25,7 +26,6 @@ export { PauseButton } from "./components/PauseButton";
 export { PauseMenu } from "./components/PauseMenu";
 export { PeekingAnimal } from "./components/PeekingAnimal";
 export { PerfectIndicator } from "./components/PerfectIndicator";
-export { BankButton } from "./components/BankButton";
 export { ScoreDisplay } from "./components/ScoreDisplay";
 export { SoundToggle } from "./components/SoundToggle";
 export { hasCompletedTutorial, resetTutorial, Tutorial } from "./components/Tutorial";
@@ -37,7 +37,7 @@ export type { EffectType, ParticleConfig, ParticleType } from "./effects/Particl
 // Particle Effects
 export { ParticleSystem, particleSystem } from "./effects/ParticleEffects";
 // Engine (new modular architecture)
-export { Game, createGame, type GameCallbacks, type GameConfig } from "./engine/Game";
+export { createGame, Game, type GameCallbacks, type GameConfig } from "./engine/Game";
 // Hooks
 export { type UseGameEngineReturn, useGameEngine } from "./hooks/useGameEngine";
 export { type UseHighScoreReturn, useHighScore } from "./hooks/useHighScore";

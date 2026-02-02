@@ -3,31 +3,31 @@
  * Pure functions for calculating wobble physics
  */
 
-import type { AnimalState, PlayerState } from '../state/GameState';
+import type { AnimalState, PlayerState } from "../state/GameState";
 
 // Wobble configuration
 export interface WobbleConfig {
   // Base wobble parameters
-  baseAmplitude: number;        // Base wobble amount (radians)
-  dampingFactor: number;        // How quickly wobble decays (0-1)
-  transferRatio: number;        // How much wobble transfers up the stack (0-1)
-  
+  baseAmplitude: number; // Base wobble amount (radians)
+  dampingFactor: number; // How quickly wobble decays (0-1)
+  transferRatio: number; // How much wobble transfers up the stack (0-1)
+
   // Stack-based scaling
-  heightMultiplier: number;     // Wobble increase per stack level
-  weightFactor: number;         // How animal weight affects wobble
-  
+  heightMultiplier: number; // Wobble increase per stack level
+  weightFactor: number; // How animal weight affects wobble
+
   // Movement-induced wobble
-  movementWobbleScale: number;  // Wobble from player movement
-  accelerationScale: number;    // Wobble from acceleration changes
-  
+  movementWobbleScale: number; // Wobble from player movement
+  accelerationScale: number; // Wobble from acceleration changes
+
   // Thresholds
-  collapseThreshold: number;    // Max wobble before collapse (radians)
-  warningThreshold: number;     // Wobble level for warning (radians)
-  stabilizeThreshold: number;   // Below this, wobble decays faster
-  
+  collapseThreshold: number; // Max wobble before collapse (radians)
+  warningThreshold: number; // Wobble level for warning (radians)
+  stabilizeThreshold: number; // Below this, wobble decays faster
+
   // Natural wobble
-  naturalFrequency: number;     // Base oscillation frequency (Hz)
-  naturalDecay: number;         // How natural wobble decays
+  naturalFrequency: number; // Base oscillation frequency (Hz)
+  naturalDecay: number; // How natural wobble decays
 }
 
 export const DEFAULT_WOBBLE_CONFIG: WobbleConfig = {
@@ -47,10 +47,10 @@ export const DEFAULT_WOBBLE_CONFIG: WobbleConfig = {
 
 // Wobble state for a single animal
 export interface AnimalWobbleState {
-  angle: number;           // Current wobble angle (radians)
-  velocity: number;        // Angular velocity
-  phase: number;           // Phase in natural oscillation
-  accumulated: number;     // Accumulated wobble for collapse check
+  angle: number; // Current wobble angle (radians)
+  velocity: number; // Angular velocity
+  phase: number; // Phase in natural oscillation
+  accumulated: number; // Accumulated wobble for collapse check
 }
 
 // Stack wobble state
@@ -99,13 +99,13 @@ export function calculateMovementWobble(
   config: WobbleConfig
 ): { wobble: number; acceleration: number } {
   const acceleration = (currentVelocity - lastVelocity) / deltaTime;
-  
+
   // Movement contributes to wobble
   const velocityWobble = Math.abs(currentVelocity) * config.movementWobbleScale;
-  
+
   // Acceleration changes cause extra wobble
   const accelWobble = Math.abs(acceleration) * config.accelerationScale;
-  
+
   return {
     wobble: velocityWobble + accelWobble,
     acceleration,
@@ -142,32 +142,36 @@ export function updateAnimalWobble(
   animalWeight: number
 ): AnimalWobbleState {
   const dt = deltaTime / 1000; // Convert to seconds
-  
+
   // Natural oscillation
   const newPhase = state.phase + config.naturalFrequency * Math.PI * 2 * dt;
   const naturalWobble = Math.sin(newPhase) * config.baseAmplitude * (1 + stackIndex * 0.1);
-  
+
   // Height-based wobble amplification
   const heightFactor = 1 + stackIndex * config.heightMultiplier;
-  
+
   // Weight affects stability (heavier = more stable at bottom, less stable at top)
-  const weightEffect = stackIndex === 0 
-    ? 1 / animalWeight  // Bottom: heavier is more stable
-    : animalWeight;      // Top: heavier is less stable
-  
+  const weightEffect =
+    stackIndex === 0
+      ? 1 / animalWeight // Bottom: heavier is more stable
+      : animalWeight; // Top: heavier is less stable
+
   // Calculate force from movement
   const movementForce = movementWobble * heightFactor * weightEffect;
-  
+
   // Update velocity with spring-like behavior
   const springForce = -state.angle * 5; // Restoring force
   const newVelocity = (state.velocity + springForce * dt + movementForce) * config.dampingFactor;
-  
+
   // Update angle
   const newAngle = state.angle + newVelocity * dt + naturalWobble * dt;
-  
+
   // Update accumulated wobble (for collapse detection)
-  const newAccumulated = Math.max(0, state.accumulated + Math.abs(newAngle) - config.naturalDecay * dt);
-  
+  const newAccumulated = Math.max(
+    0,
+    state.accumulated + Math.abs(newAngle) - config.naturalDecay * dt
+  );
+
   return {
     angle: newAngle,
     velocity: newVelocity,
@@ -184,24 +188,24 @@ export function propagateWobble(
   config: WobbleConfig
 ): AnimalWobbleState[] {
   if (stackWobbleStates.length <= 1) return stackWobbleStates;
-  
+
   const result = [...stackWobbleStates];
-  
+
   // Bottom-up propagation
   for (let i = 1; i < result.length; i++) {
     const below = result[i - 1];
     const current = result[i];
-    
+
     // Transfer wobble from below
     const transferred = below.angle * config.transferRatio;
-    
+
     result[i] = {
       ...current,
       angle: current.angle + transferred * 0.5,
       velocity: current.velocity + below.velocity * config.transferRatio * 0.3,
     };
   }
-  
+
   return result;
 }
 
@@ -222,18 +226,18 @@ export function updateStackWobble(
     deltaTime,
     config
   );
-  
+
   // Update each animal's wobble
   const newAnimals = new Map<string, AnimalWobbleState>();
   let maxWobble = 0;
-  
+
   stackedAnimals.forEach((animal, index) => {
     // Get or create wobble state for this animal
     let animalWobble = state.animals.get(animal.id);
     if (!animalWobble) {
       animalWobble = createAnimalWobbleState();
     }
-    
+
     // Update wobble physics
     const weight = getAnimalWeight(animal.type);
     const updatedWobble = updateAnimalWobble(
@@ -244,24 +248,24 @@ export function updateStackWobble(
       config,
       weight
     );
-    
+
     newAnimals.set(animal.id, updatedWobble);
     maxWobble = Math.max(maxWobble, Math.abs(updatedWobble.angle));
   });
-  
+
   // Propagate wobble through stack
-  const wobbleArray = stackedAnimals.map(a => newAnimals.get(a.id)!);
+  const wobbleArray = stackedAnimals.map((a) => newAnimals.get(a.id)!);
   const propagated = propagateWobble(wobbleArray, config);
   propagated.forEach((wobble, index) => {
     const animalId = stackedAnimals[index].id;
     newAnimals.set(animalId, wobble);
     maxWobble = Math.max(maxWobble, Math.abs(wobble.angle));
   });
-  
+
   // Determine warning/collapse states
   const isWarning = maxWobble >= config.warningThreshold;
   const isCollapsing = maxWobble >= config.collapseThreshold;
-  
+
   return {
     animals: newAnimals,
     overallIntensity: maxWobble / config.collapseThreshold,
@@ -282,7 +286,7 @@ export function getVisualWobbleAngle(
 ): number {
   const animalWobble = state.animals.get(animalId);
   if (!animalWobble) return 0;
-  
+
   // Add visual exaggeration for higher stack positions
   const visualMultiplier = 1 + stackIndex * 0.3;
   return animalWobble.angle * visualMultiplier;
@@ -298,7 +302,7 @@ export function getWobbleOffset(
 ): number {
   const animalWobble = state.animals.get(animalId);
   if (!animalWobble) return 0;
-  
+
   // Convert angle to horizontal offset using arc length approximation
   return Math.sin(animalWobble.angle) * animalHeight * 0.5;
 }
@@ -309,11 +313,11 @@ export function getWobbleOffset(
 export function applyStackImpulse(
   state: StackWobbleState,
   impulseDirection: number, // -1 to 1
-  impulseStrength: number,  // 0 to 1
+  impulseStrength: number, // 0 to 1
   affectedIndices?: number[] // Which stack positions to affect (default: all)
 ): StackWobbleState {
   const newAnimals = new Map(state.animals);
-  
+
   state.animals.forEach((wobble, animalId) => {
     const updatedWobble: AnimalWobbleState = {
       ...wobble,
@@ -322,7 +326,7 @@ export function applyStackImpulse(
     };
     newAnimals.set(animalId, updatedWobble);
   });
-  
+
   return {
     ...state,
     animals: newAnimals,
@@ -338,7 +342,7 @@ export function stabilizeStack(
   stabilizeFactor: number = 0.5
 ): StackWobbleState {
   const newAnimals = new Map<string, AnimalWobbleState>();
-  
+
   state.animals.forEach((wobble, animalId) => {
     newAnimals.set(animalId, {
       ...wobble,
@@ -347,7 +351,7 @@ export function stabilizeStack(
       accumulated: wobble.accumulated * (1 - stabilizeFactor * 0.5),
     });
   });
-  
+
   return {
     ...state,
     animals: newAnimals,

@@ -3,11 +3,11 @@
  * Combines audio, haptic, and voice feedback for game events
  */
 
-import { haptics } from "./haptics";
-import { platformAudio } from "./audio";
-import { voiceManager } from "./voice";
 import type { SoundType } from "@/game/audio";
+import { platformAudio } from "./audio";
+import { haptics } from "./haptics";
 import type { VoiceEvent, VoiceGender } from "./voice";
+import { voiceManager } from "./voice";
 
 /**
  * Mapping from SoundType to the corresponding VoiceEvent (if any).

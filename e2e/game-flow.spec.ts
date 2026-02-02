@@ -52,7 +52,7 @@ test.describe("Gameplay", () => {
         !e.includes("autoplay") &&
         !e.includes("net::ERR") &&
         !e.includes("NotAllowedError") &&
-        !e.includes("play()"),
+        !e.includes("play()")
     );
 
     expect(criticalErrors).toHaveLength(0);

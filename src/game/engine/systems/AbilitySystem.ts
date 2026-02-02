@@ -284,12 +284,15 @@ export interface AbilityUpdateResult {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Module-level monotonic counter to prevent same-ms ID collisions across state resets */
+let effectIdCounter = 0;
+
 function nextEffectId(state: AbilitySystemState): {
   id: string;
   nextId: number;
 } {
   const nextId = state.nextEffectId + 1;
-  const id = `ability_${Date.now()}_${nextId}`;
+  const id = `effect_${Date.now()}_${++effectIdCounter}`;
   return { id, nextId };
 }
 

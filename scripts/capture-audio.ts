@@ -1,13 +1,13 @@
 /**
  * Audio Capture Script
  * Renders Tone.js procedural audio to OGG files using headless browser + OfflineAudioContext
- * 
+ *
  * Usage: npx tsx scripts/capture-audio.ts
  */
 
+import { execSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { execSync } from "node:child_process";
 
 // Audio configuration
 const SAMPLE_RATE = 44100;

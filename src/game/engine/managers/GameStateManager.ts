@@ -1,10 +1,10 @@
 /**
  * GameStateManager - Manages game session state (score, lives, level, etc.)
- * 
+ *
  * Separates game session state from entity state
  */
 
-import { GAME_CONFIG } from '../../config';
+import { GAME_CONFIG } from "../../config";
 
 const { lives: livesConfig, scoring, difficulty, banking } = GAME_CONFIG;
 
@@ -14,28 +14,28 @@ export interface GameSessionState {
   level: number;
   lives: number;
   maxLives: number;
-  
+
   // Progression
   bankedAnimals: number;
   totalCaught: number;
   totalMissed: number;
-  
+
   // Scoring
   currentMultiplier: number;
   combo: number;
   lastCatchTime: number;
   perfectStreak: number;
   lastScoreForLifeBonus: number;
-  
+
   // Timing
   gameStartTime: number;
   playTime: number;
-  
+
   // Spawn tracking
   spawnInterval: number;
   lastSpawnTime: number;
   lastPowerUpTime: number;
-  
+
   // Status flags
   isPlaying: boolean;
   isPaused: boolean;
@@ -61,24 +61,24 @@ export function createInitialState(): GameSessionState {
     level: 1,
     lives: livesConfig.starting,
     maxLives: livesConfig.max,
-    
+
     bankedAnimals: 0,
     totalCaught: 0,
     totalMissed: 0,
-    
+
     currentMultiplier: 1,
     combo: 0,
     lastCatchTime: 0,
     perfectStreak: 0,
     lastScoreForLifeBonus: 0,
-    
+
     gameStartTime: 0,
     playTime: 0,
-    
+
     spawnInterval: GAME_CONFIG.spawning.initialInterval,
     lastSpawnTime: 0,
     lastPowerUpTime: 0,
-    
+
     isPlaying: false,
     isPaused: false,
     isGameOver: false,
@@ -111,7 +111,7 @@ export class GameStateManager {
       gameStartTime: performance.now(),
       isPlaying: true,
     };
-    
+
     this.callbacks.onScoreChange?.(0, 1, 0);
     this.callbacks.onLivesChange?.(this.state.lives, this.state.maxLives);
   }
@@ -151,7 +151,7 @@ export class GameStateManager {
     } = {}
   ): number {
     const now = performance.now();
-    
+
     // Update combo
     if (now - this.state.lastCatchTime < scoring.comboDecayTime) {
       this.state.combo++;
@@ -159,28 +159,28 @@ export class GameStateManager {
       this.state.combo = 1;
     }
     this.state.lastCatchTime = now;
-    
+
     // Calculate total points
-    const catchBonus = options.isPerfect 
-      ? scoring.perfectBonus 
-      : options.isGood 
-        ? scoring.goodBonus 
+    const catchBonus = options.isPerfect
+      ? scoring.perfectBonus
+      : options.isGood
+        ? scoring.goodBonus
         : 1;
     const stackBonus = options.stackBonus ?? 1;
     const comboBonus = 1 + this.state.combo * scoring.comboMultiplier;
-    
+
     const points = Math.floor(
       basePoints * catchBonus * stackBonus * this.state.currentMultiplier * comboBonus
     );
-    
+
     this.state.score += points;
-    
+
     // Update multiplier
     this.state.currentMultiplier = Math.min(
       scoring.maxMultiplier,
       this.state.currentMultiplier + 0.1
     );
-    
+
     // Perfect streak tracking
     if (options.isPerfect) {
       this.state.perfectStreak++;
@@ -191,22 +191,25 @@ export class GameStateManager {
     } else {
       this.state.perfectStreak = 0;
     }
-    
+
     // Score-based life bonus
-    if (this.state.score - this.state.lastScoreForLifeBonus >= livesConfig.earnThresholds.scoreBonus) {
+    if (
+      this.state.score - this.state.lastScoreForLifeBonus >=
+      livesConfig.earnThresholds.scoreBonus
+    ) {
       this.earnLife();
       this.state.lastScoreForLifeBonus = this.state.score;
     }
-    
+
     this.state.totalCaught++;
     this.checkLevelUp();
-    
+
     this.callbacks.onScoreChange?.(
       this.state.score,
       this.state.currentMultiplier,
       this.state.combo
     );
-    
+
     return points;
   }
 
@@ -215,25 +218,28 @@ export class GameStateManager {
    */
   bankAnimals(count: number): number {
     if (count < banking.minStackToBank) return 0;
-    
+
     const bankBonus = count * scoring.bankingBonusPerAnimal * this.state.currentMultiplier;
     this.state.score += Math.floor(bankBonus);
     this.state.bankedAnimals += count;
-    
+
     // Banking bonus life
     if (count >= livesConfig.earnThresholds.bankingBonus) {
       this.earnLife();
     }
-    
+
     // Banking penalty to multiplier
-    this.state.currentMultiplier = Math.max(1, this.state.currentMultiplier * scoring.bankingPenalty);
-    
+    this.state.currentMultiplier = Math.max(
+      1,
+      this.state.currentMultiplier * scoring.bankingPenalty
+    );
+
     this.callbacks.onScoreChange?.(
       this.state.score,
       this.state.currentMultiplier,
       this.state.combo
     );
-    
+
     return Math.floor(bankBonus);
   }
 
@@ -246,19 +252,19 @@ export class GameStateManager {
     this.state.combo = 0;
     this.state.perfectStreak = 0;
     this.state.currentMultiplier = Math.max(1, this.state.currentMultiplier * 0.8);
-    
+
     this.callbacks.onLivesChange?.(this.state.lives, this.state.maxLives);
     this.callbacks.onScoreChange?.(
       this.state.score,
       this.state.currentMultiplier,
       this.state.combo
     );
-    
+
     if (this.state.lives <= 0) {
       this.endGame();
       return false; // Game over
     }
-    
+
     return true; // Still alive
   }
 
@@ -267,7 +273,7 @@ export class GameStateManager {
    */
   earnLife(): void {
     if (this.state.lives >= this.state.maxLives) return;
-    
+
     this.state.lives++;
     this.callbacks.onLivesChange?.(this.state.lives, this.state.maxLives);
     this.callbacks.onLifeEarned?.();
@@ -334,12 +340,13 @@ export class GameStateManager {
       difficulty.maxLevel,
       Math.floor((this.state.score / difficulty.levelUpThreshold) ** difficulty.spawnRateCurve) + 1
     );
-    
+
     if (newLevel > this.state.level) {
       this.state.level = newLevel;
       this.state.spawnInterval = Math.max(
         GAME_CONFIG.spawning.minInterval,
-        GAME_CONFIG.spawning.initialInterval - (this.state.level - 1) * GAME_CONFIG.spawning.intervalDecreasePerLevel
+        GAME_CONFIG.spawning.initialInterval -
+          (this.state.level - 1) * GAME_CONFIG.spawning.intervalDecreasePerLevel
       );
       this.callbacks.onLevelUp?.(this.state.level);
     }

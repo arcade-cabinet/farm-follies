@@ -3,12 +3,12 @@
  * Unified API for cross-platform features
  */
 
-export { haptics } from "./haptics";
-export { storage, STORAGE_KEYS } from "./storage";
+export { type AppLifecycleCallbacks, type AppState, appLifecycle } from "./app-lifecycle";
 export { platformAudio } from "./audio";
-export { appLifecycle, type AppState, type AppLifecycleCallbacks } from "./app-lifecycle";
 export { feedback } from "./feedback";
-export { voiceManager, type VoiceEvent, type VoiceGender } from "./voice";
+export { haptics } from "./haptics";
+export { STORAGE_KEYS, storage } from "./storage";
+export { type VoiceEvent, type VoiceGender, voiceManager } from "./voice";
 
 // Re-export Capacitor utilities
 import { Capacitor } from "@capacitor/core";

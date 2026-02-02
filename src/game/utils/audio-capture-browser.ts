@@ -1,7 +1,7 @@
 /**
  * Browser-based Audio Capture Module
  * Import this in a React component to trigger audio capture from the UI
- * 
+ *
  * Usage in dev tools console or component:
  *   import { captureAllAudio } from '@/scripts/audio-capture-browser';
  *   await captureAllAudio();
@@ -11,7 +11,7 @@ import * as Tone from "tone";
 
 const SFX_NAMES = [
   "drop",
-  "land", 
+  "land",
   "perfect",
   "fail",
   "powerup",
