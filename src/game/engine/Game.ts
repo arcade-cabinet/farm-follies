@@ -120,7 +120,10 @@ export class Game {
 
   // Callbacks
   private callbacks: GameCallbacks;
-  
+
+  // Pending timeouts (tracked for cleanup)
+  private pendingTimeouts: Set<ReturnType<typeof setTimeout>> = new Set();
+
   // Status
   private _isPlaying = false;
   private _isPaused = false;
@@ -287,6 +290,10 @@ export class Game {
     this.input.detach();
     this.cleanupScaleObserver?.();
     feedback.stopMusic();
+    for (const timeout of this.pendingTimeouts) {
+      clearTimeout(timeout);
+    }
+    this.pendingTimeouts.clear();
   }
 
   /**
@@ -664,9 +671,11 @@ export class Game {
     
     // Trigger tornado spawn animation
     this.tornadoState.isSpawning = true;
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       this.tornadoState.isSpawning = false;
+      this.pendingTimeouts.delete(timeout);
     }, 300);
+    this.pendingTimeouts.add(timeout);
   }
 
   private updateFallingAnimals(

@@ -284,14 +284,13 @@ export interface AbilityUpdateResult {
 // Helpers
 // ---------------------------------------------------------------------------
 
-let effectIdCounter = 0;
-
 function nextEffectId(state: AbilitySystemState): {
   id: string;
   nextId: number;
 } {
-  const id = `ability_${Date.now()}_${++effectIdCounter}`;
-  return { id, nextId: state.nextEffectId + 1 };
+  const nextId = state.nextEffectId + 1;
+  const id = `ability_${Date.now()}_${nextId}`;
+  return { id, nextId };
 }
 
 // ---------------------------------------------------------------------------
