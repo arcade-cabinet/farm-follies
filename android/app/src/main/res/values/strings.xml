@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Farm Follies</string>
+    <string name="title_activity_main">Farm Follies</string>
+    <string name="package_name">com.farmfollies.game</string>
+    <string name="custom_url_scheme">com.farmfollies.game</string>
+</resources>

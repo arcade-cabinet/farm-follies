@@ -1,0 +1,929 @@
+/**
+ * Game - Main game orchestrator
+ * 
+ * Composes all modules into a cohesive game experience.
+ * This is the new, modular replacement for the monolithic GameEngine.
+ */
+
+import { feedback } from '@/platform';
+import { GAME_CONFIG } from '../config';
+
+// Core
+import { GameLoop } from './core/GameLoop';
+import { calculateScale, createScaleObserver, type ScaleFactors } from './core/ResponsiveScale';
+
+// Input
+import { InputManager } from './input/InputManager';
+
+// Entities
+import { createPlayer, updatePlayerPosition, getPlayerCenterX, getStackTopY, type PlayerEntity, addToStack, clearStack, isInvincible, setInvincible, updatePowerUpTimers, activateMagnet, activateDoublePoints } from './entities/Player';
+import { createRandomAnimal, catchAnimal, type AnimalEntity } from './entities/Animal';
+
+// Managers
+import { EntityManager, createEntityManager } from './managers/EntityManager';
+import { GameStateManager, type GameStateCallbacks } from './managers/GameStateManager';
+
+// Rendering
+import { RenderContext, createRenderContext } from './rendering/RenderContext';
+import { Renderer } from './rendering/Renderer';
+
+// Systems
+import { calculateMagneticPull } from './systems/CollisionSystem';
+import { createStackWobbleState, applyStackImpulse, getAnimalWeight, type StackWobbleState, type AnimalWobbleState, DEFAULT_WOBBLE_CONFIG } from './systems/WobblePhysics';
+import {
+  createAbilitySystemState,
+  activateAbility,
+  updateAbilityEffects,
+  consumeHoneyTrapCatch,
+  updateStackAbilityCooldowns,
+  findTappedAbilityAnimal,
+  resolveAbilityType,
+  getFeatherFloatMultiplier,
+  getMudSlowFactor,
+  checkHayPlatformBounce,
+  type AbilitySystemState,
+} from './systems/AbilitySystem';
+
+// AI
+import { updateTornadoState, type TornadoState } from '../renderer/tornado';
+import { GameDirector, type GameState as DirectorGameState } from '../ai/GameDirector';
+
+const { layout, collision, physics, lives: livesConfig } = GAME_CONFIG;
+
+export interface GameConfig {
+  showDebug?: boolean;
+}
+
+export interface GameCallbacks extends GameStateCallbacks {
+  onPerfectCatch?: (x: number, y: number) => void;
+  onGoodCatch?: (x: number, y: number) => void;
+  onMiss?: () => void;
+  onBankComplete?: (count: number) => void;
+  onStackTopple?: () => void;
+  onStackChange?: (height: number, canBank: boolean) => void;
+}
+
+export class Game {
+  // Canvas and rendering
+  private canvas: HTMLCanvasElement;
+  private renderCtx: RenderContext;
+  private renderer: Renderer;
+  
+  // Core systems
+  private gameLoop: GameLoop;
+  private input: InputManager;
+  private entities: EntityManager;
+  private gameState: GameStateManager;
+  
+  // AI
+  private gameDirector: GameDirector;
+  
+  // Scale
+  private scale: ScaleFactors;
+  private cleanupScaleObserver: (() => void) | null = null;
+  
+  // Tornado
+  private tornadoState: TornadoState;
+  
+  // Wobble
+  private wobbleState: StackWobbleState;
+
+  // Abilities
+  private abilityState: AbilitySystemState;
+
+  // Callbacks
+  private callbacks: GameCallbacks;
+  
+  // Status
+  private _isPlaying = false;
+  private _isPaused = false;
+
+  constructor(
+    canvas: HTMLCanvasElement,
+    callbacks: GameCallbacks = {},
+    config: GameConfig = {}
+  ) {
+    this.canvas = canvas;
+    this.callbacks = callbacks;
+    
+    // Initialize scale
+    this.scale = calculateScale(canvas.width, canvas.height);
+    
+    // Initialize render context
+    this.renderCtx = createRenderContext(canvas, this.scale);
+    this.renderer = new Renderer(this.renderCtx, { showDebug: config.showDebug ?? false });
+    
+    // Initialize managers
+    this.entities = createEntityManager();
+    this.gameState = new GameStateManager({
+      onScoreChange: callbacks.onScoreChange,
+      onLivesChange: callbacks.onLivesChange,
+      onLevelUp: callbacks.onLevelUp,
+      onDangerStateChange: callbacks.onDangerStateChange,
+      onGameOver: callbacks.onGameOver,
+      onLifeEarned: callbacks.onLifeEarned,
+    });
+    
+    // Initialize AI
+    this.gameDirector = new GameDirector();
+    
+    // Initialize tornado
+    this.tornadoState = this.createInitialTornadoState();
+    
+    // Initialize wobble
+    this.wobbleState = createStackWobbleState();
+
+    // Initialize abilities
+    this.abilityState = createAbilitySystemState();
+
+    // Initialize input
+    this.input = new InputManager(canvas, {
+      onDragMove: this.handleDragMove.bind(this),
+      onTap: this.handleTap.bind(this),
+    });
+    
+    // Initialize game loop
+    this.gameLoop = new GameLoop({
+      fixedUpdate: this.fixedUpdate.bind(this),
+      update: this.update.bind(this),
+      render: this.render.bind(this),
+    }, { enableMetrics: config.showDebug });
+    
+    // Setup resize handling
+    this.setupResize();
+  }
+
+  /**
+   * Start a new game
+   */
+  start(): void {
+    feedback.init();
+    
+    // Reset state
+    this.gameState.startGame();
+    this.entities.clear();
+    this.wobbleState = createStackWobbleState();
+    this.abilityState = createAbilitySystemState();
+    this.tornadoState = this.createInitialTornadoState();
+    this.gameDirector = new GameDirector();
+    
+    // Create player
+    const floorY = this.canvas.height * layout.floorY;
+    const player = createPlayer(
+      this.canvas.width / 2,
+      floorY,
+      this.scale.entityWidth,
+      this.scale.entityHeight
+    );
+    this.entities.addImmediate(player);
+    
+    // Enable input
+    this.input.enable();
+    
+    // Start music
+    feedback.startMusic();
+    feedback.setIntensity(0);
+    
+    // Start loop
+    this._isPlaying = true;
+    this._isPaused = false;
+    this.gameLoop.start();
+    
+    // Notify UI
+    this.callbacks.onStackChange?.(0, false);
+  }
+
+  /**
+   * Pause the game
+   */
+  pause(): void {
+    this._isPaused = true;
+    this.gameLoop.pause();
+    this.gameState.pause();
+    feedback.stopMusic();
+  }
+
+  /**
+   * Resume the game
+   */
+  resume(): void {
+    this._isPaused = false;
+    this.gameLoop.resume();
+    this.gameState.resume();
+    feedback.startMusic();
+  }
+
+  /**
+   * Stop the game
+   */
+  stop(): void {
+    this._isPlaying = false;
+    this.gameLoop.stop();
+    this.input.disable();
+  }
+
+  /**
+   * Bank current stack
+   */
+  bankStack(): void {
+    const player = this.entities.get<PlayerEntity>('player');
+    if (!player || !this.gameState.canBank(player.player.stack.length)) return;
+    
+    const count = player.player.stack.length;
+    
+    // Calculate and add bank bonus
+    this.gameState.bankAnimals(count);
+    
+    // Clear player stack
+    const updatedPlayer = clearStack(player);
+    this.entities.replace(updatedPlayer);
+    
+    // Effects
+    feedback.play('bank');
+    this.callbacks.onBankComplete?.(this.gameState.bankedAnimals);
+    this.callbacks.onStackChange?.(0, false);
+  }
+
+  /**
+   * Clean up resources
+   */
+  destroy(): void {
+    this.gameLoop.stop();
+    this.input.detach();
+    this.cleanupScaleObserver?.();
+    feedback.stopMusic();
+  }
+
+  /**
+   * Check if game is playing
+   */
+  get isPlaying(): boolean {
+    return this._isPlaying;
+  }
+
+  /**
+   * Check if game is paused
+   */
+  get isPaused(): boolean {
+    return this._isPaused;
+  }
+
+  /**
+   * Get stack height
+   */
+  get stackHeight(): number {
+    const player = this.entities.get<PlayerEntity>('player');
+    return player?.player.stack.length ?? 0;
+  }
+
+  /**
+   * Check if can bank
+   */
+  get canBank(): boolean {
+    return this.gameState.canBank(this.stackHeight);
+  }
+
+  // Private methods
+
+  private createInitialTornadoState(): TornadoState {
+    return {
+      x: this.canvas.width / 2,
+      direction: Math.random() > 0.5 ? 1 : -1,
+      rotation: 0,
+      intensity: 0.3,
+      isSpawning: false,
+      spawnCooldown: 0,
+    };
+  }
+
+  private setupResize(): void {
+    this.cleanupScaleObserver = createScaleObserver(this.canvas, (newScale) => {
+      this.scale = newScale;
+      this.renderCtx.setScale(newScale);
+    });
+  }
+
+  private handleDragMove(x: number, _y: number, deltaX: number): void {
+    if (!this._isPlaying || this._isPaused) return;
+    
+    const player = this.entities.get<PlayerEntity>('player');
+    if (!player) return;
+    
+    // Apply wobble from movement
+    const wobbleForce = this.input.getState().smoothedVelocityX * physics.wobbleStrength * 0.8;
+    if (Math.abs(wobbleForce) > 0.001) {
+      this.wobbleState = applyStackImpulse(this.wobbleState, Math.sign(wobbleForce), Math.abs(wobbleForce) * 0.1);
+    }
+  }
+
+  private handleTap(x: number, y: number): void {
+    if (!this._isPlaying || this._isPaused) return;
+
+    const player = this.entities.get<PlayerEntity>("player");
+    if (!player || player.player.stack.length === 0) return;
+
+    // Check if a stacked special animal was tapped
+    const tappedAnimal = findTappedAbilityAnimal(x, y, player);
+    if (!tappedAnimal) return;
+
+    const abilityType = resolveAbilityType(tappedAnimal);
+    if (!abilityType) return;
+
+    // Feather float is passive -- cannot be tap-activated
+    if (abilityType === "feather_float") return;
+
+    const playerCenterX = getPlayerCenterX(player);
+    const stackTopY = getStackTopY(player);
+    const groundY = this.canvas.height * layout.floorY;
+    const fallingAnimals = this.entities.getByType<AnimalEntity>("animal").filter(
+      (a) => a.animal.state === "falling",
+    );
+
+    const result = activateAbility(this.abilityState, tappedAnimal, abilityType, {
+      playerCenterX,
+      stackTopY,
+      canvasWidth: this.canvas.width,
+      canvasHeight: this.canvas.height,
+      groundY,
+      fallingAnimals,
+    });
+
+    if (!result.activated) return;
+
+    this.abilityState = result.state;
+
+    // Update the animal in the player stack with its new cooldown
+    const updatedStack = player.player.stack.map((a) =>
+      a.id === result.animal.id ? result.animal : a,
+    );
+    const updatedPlayer: PlayerEntity = {
+      ...player,
+      player: { ...player.player, stack: updatedStack },
+    };
+    this.entities.replace(updatedPlayer);
+
+    // Handle instant effects
+    if (result.bonusScore > 0) {
+      this.gameState.addScore(result.bonusScore, {
+        isPerfect: false,
+        isGood: false,
+        stackBonus: 1,
+      });
+    }
+
+    // Egg bomb: remove cleared falling animals
+    if (abilityType === "egg_bomb") {
+      const eggEffect = result.state.activeEffects.find(
+        (e) => e.type === "egg_bomb",
+      );
+      if (eggEffect && eggEffect.type === "egg_bomb") {
+        for (const clearedId of eggEffect.clearedAnimalIds) {
+          this.entities.remove(clearedId);
+        }
+      }
+    }
+
+    // Audio feedback
+    feedback.play("perfect");
+  }
+
+  /**
+   * Fixed timestep update - physics and game logic
+   */
+  private fixedUpdate(dt: number): void {
+    if (!this._isPlaying || this._isPaused) return;
+    
+    const now = performance.now();
+    const player = this.entities.get<PlayerEntity>('player');
+    if (!player) return;
+    
+    // Update tornado
+    this.tornadoState = updateTornadoState(
+      this.tornadoState,
+      dt,
+      this.canvas.width,
+      this.scale.bankWidth
+    );
+    this.tornadoState.intensity = 0.3 + Math.min(0.7, this.gameState.level * 0.05);
+    
+    // Update game director
+    this.updateDirector(dt, player);
+    
+    // Spawn check
+    if (this.gameState.shouldSpawn(now)) {
+      this.spawnAnimal();
+    }
+    
+    // Update ability effects
+    const playerCenterX = getPlayerCenterX(player);
+    const stackTopY = getStackTopY(player);
+    const groundY = this.canvas.height * layout.floorY;
+    const fallingAnimals = this.entities
+      .getByType<AnimalEntity>("animal")
+      .filter((a) => a.animal.state === "falling");
+
+    const abilityResult = updateAbilityEffects(this.abilityState, dt, {
+      playerCenterX,
+      stackTopY,
+      groundY,
+      canvasWidth: this.canvas.width,
+      fallingAnimals,
+    });
+    this.abilityState = abilityResult.state;
+
+    // Handle ability side-effects: remove cleared animals (egg bomb)
+    for (const clearedId of abilityResult.clearedAnimalIds) {
+      this.entities.remove(clearedId);
+    }
+
+    // Handle ability side-effects: spawn bushes from poop shot
+    // (Bush creation is handled externally -- for now we just log the positions
+    // so the renderer data is available. Full BushSystem integration can
+    // create bushes from these positions.)
+    // Future: this.bushSystem.createBushAt(pos.x, pos.y) for each position
+
+    // Award ability bonus score
+    if (abilityResult.bonusScore > 0) {
+      this.gameState.addScore(abilityResult.bonusScore, {
+        isPerfect: false,
+        isGood: false,
+        stackBonus: 1,
+      });
+    }
+
+    // Update falling animals with ability modifiers
+    this.updateFallingAnimals(dt, player, abilityResult);
+
+    // Check catches (with honey-trap centering)
+    this.checkCatches(player, abilityResult);
+
+    // Update wobble physics
+    this.wobbleState = this.updateWobble(
+      player.player.stack,
+      this.input.getState().smoothedVelocityX,
+      dt,
+    );
+
+    // Check stack stability (wool shield prevents toppling)
+    if (!abilityResult.isShielded) {
+      this.checkStackStability(player);
+    } else {
+      // Still show warning visuals but do not topple
+      this.gameState.setDangerState(false);
+    }
+
+    // Update combo decay
+    this.gameState.updateCombo(now);
+
+    // Update stacked animal ability cooldowns
+    const cooldownUpdatedStack = updateStackAbilityCooldowns(
+      player.player.stack,
+      dt,
+    );
+    const playerWithCooldowns: PlayerEntity = {
+      ...player,
+      player: { ...player.player, stack: cooldownUpdatedStack },
+    };
+
+    // Update player power-up timers
+    const updatedPlayer = updatePowerUpTimers(playerWithCooldowns);
+    this.entities.replace(updatedPlayer);
+  }
+
+  /**
+   * Variable timestep update - non-physics
+   */
+  private update(dt: number, _alpha: number): void {
+    if (!this._isPlaying) return;
+    
+    const player = this.entities.get<PlayerEntity>('player');
+    if (!player) return;
+    
+    // Update player position
+    const inputState = this.input.getState();
+    const minX = this.scale.entityWidth / 2 + 10;
+    const maxX = this.canvas.width - this.scale.bankWidth - this.scale.entityWidth / 2 - 10;
+    
+    const updatedPlayer = updatePlayerPosition(
+      player,
+      inputState.pointerX,
+      minX,
+      maxX,
+      dt,
+      inputState.isDragging
+    );
+    this.entities.replace(updatedPlayer);
+    
+    // Update renderer effects
+    this.renderer.update(dt);
+    
+    // Update input
+    this.input.update(dt);
+    
+    // Update music intensity
+    this.updateMusicIntensity();
+    
+    // Flush entity changes
+    this.entities.flush();
+  }
+
+  /**
+   * Render frame
+   */
+  private render(_alpha: number): void {
+    const player = this.entities.get<PlayerEntity>('player');
+    const invincible = player ? isInvincible(player) : false;
+    
+    this.renderer.render(
+      this.entities,
+      this.gameState,
+      this.tornadoState,
+      invincible
+    );
+  }
+
+  private updateDirector(dt: number, player: PlayerEntity): void {
+    const state: DirectorGameState = {
+      playerX: getPlayerCenterX(player),
+      playerY: player.transform.position.y,
+      stackHeight: player.player.stack.length,
+      lives: this.gameState.lives,
+      maxLives: this.gameState.getState().maxLives,
+      score: this.gameState.score,
+      combo: this.gameState.getState().combo,
+      gameTime: this.gameState.getState().playTime,
+      timeSinceLastSpawn: performance.now() - this.gameState.getState().lastSpawnTime,
+      timeSinceLastPowerUp: performance.now() - this.gameState.getState().lastPowerUpTime,
+      timeSinceLastMiss: 10000,
+      timeSinceLastPerfect: 10000,
+      recentCatches: 0,
+      recentMisses: 0,
+      recentPerfects: 0,
+      catchRate: 0.5,
+      activeDucks: this.entities.getCountByType('animal'),
+      activePowerUps: this.entities.getCountByType('powerup'),
+      screenWidth: this.canvas.width,
+      screenHeight: this.canvas.height,
+      level: this.gameState.level,
+      bankedDucks: this.gameState.getState().bankedAnimals,
+    };
+    
+    this.gameDirector.updateGameState(state);
+    this.gameDirector.update(dt / 1000);
+  }
+
+  private spawnAnimal(): void {
+    const decision = this.gameDirector.decideSpawn();
+    if (!decision.shouldSpawn) return;
+    
+    // Spawn from tornado position
+    const spawnX = this.tornadoState.x + (Math.random() - 0.5) * 40;
+    const spawnY = -this.scale.entityHeight;
+    
+    const animal = createRandomAnimal(spawnX, spawnY, this.gameState.level);
+    this.entities.add(animal);
+    
+    this.gameState.updateSpawnTime(performance.now());
+    
+    // Trigger tornado spawn animation
+    this.tornadoState.isSpawning = true;
+    setTimeout(() => {
+      this.tornadoState.isSpawning = false;
+    }, 300);
+  }
+
+  private updateFallingAnimals(
+    dt: number,
+    player: PlayerEntity,
+    abilityResult?: Awaited<ReturnType<typeof updateAbilityEffects>>,
+  ): void {
+    const animals = this.entities.getByType<AnimalEntity>("animal");
+    const playerCenterX = getPlayerCenterX(player);
+    const playerY = player.transform.position.y;
+
+    for (const animal of animals) {
+      if (animal.animal.state !== "falling") continue;
+
+      // Bleat stun: skip movement for stunned animals
+      if (abilityResult?.stunnedAnimalIds.has(animal.id)) {
+        continue;
+      }
+
+      // Apply gravity
+      if (animal.velocity) {
+        // Feather float: special ducks fall slower
+        const featherMult = getFeatherFloatMultiplier(animal);
+
+        animal.velocity.linear.y +=
+          physics.gravity * featherMult * (dt / 16.67);
+        animal.velocity.linear.y = Math.min(
+          animal.velocity.linear.y,
+          12 * featherMult,
+        );
+
+        // Mud splash: slow animals in mud zones
+        if (abilityResult?.mudZones && abilityResult.mudZones.length > 0) {
+          const mudFactor = getMudSlowFactor(
+            animal.transform.position.x,
+            animal.transform.position.y,
+            animal.bounds?.width ?? 50,
+            animal.bounds?.height ?? 50,
+            abilityResult.mudZones,
+          );
+          if (mudFactor < 1.0) {
+            animal.velocity.linear.y *= mudFactor;
+          }
+        }
+
+        // Apply magnet effect (power-up)
+        if (player.player.magnetActive) {
+          const dx = playerCenterX - animal.transform.position.x;
+          animal.velocity.linear.x += dx * 0.001;
+        }
+
+        // Crow call: magnetic pull toward farmer
+        if (
+          abilityResult?.magneticPullTargetX !== null &&
+          abilityResult?.magneticPullTargetX !== undefined
+        ) {
+          const dx =
+            abilityResult.magneticPullTargetX -
+            animal.transform.position.x;
+          animal.velocity.linear.x +=
+            dx * abilityResult.magneticPullStrength * (dt / 16.67);
+        }
+
+        // Update position
+        animal.transform.position.x +=
+          animal.velocity.linear.x * (dt / 16.67);
+        animal.transform.position.y +=
+          animal.velocity.linear.y * (dt / 16.67);
+
+        // Hay storm: bounce off hay platforms
+        if (
+          abilityResult?.hayPlatforms &&
+          abilityResult.hayPlatforms.length > 0
+        ) {
+          const hayBounce = checkHayPlatformBounce(
+            animal.transform.position.x,
+            animal.transform.position.y,
+            animal.bounds?.width ?? 50,
+            animal.bounds?.height ?? 50,
+            animal.velocity.linear.y,
+            abilityResult.hayPlatforms,
+          );
+          if (hayBounce.bounced) {
+            animal.velocity.linear.y = hayBounce.bounceVelocityY;
+            animal.velocity.linear.x += hayBounce.bounceVelocityX;
+          }
+        }
+      }
+
+      // Check if missed (fell past player)
+      const animalBottom =
+        animal.transform.position.y + (animal.bounds?.height ?? 50);
+      if (animalBottom > playerY + (player.bounds?.height ?? 100) + 20) {
+        this.entities.remove(animal);
+        this.handleMiss();
+      }
+    }
+  }
+
+  private checkCatches(
+    player: PlayerEntity,
+    abilityResult?: Awaited<ReturnType<typeof updateAbilityEffects>>,
+  ): void {
+    const animals = this.entities.getByType<AnimalEntity>("animal");
+    const playerCenterX = getPlayerCenterX(player);
+    const stackTopY = getStackTopY(player);
+    const catchWidth = (player.bounds?.width ?? 80) * 0.6;
+
+    for (const animal of animals) {
+      if (animal.animal.state !== "falling") continue;
+
+      const animalCenterX =
+        animal.transform.position.x + (animal.bounds?.width ?? 50) / 2;
+      const animalY =
+        animal.transform.position.y + (animal.bounds?.height ?? 50);
+
+      // Check if in catch zone
+      const dx = animalCenterX - playerCenterX;
+      const dy = animalY - stackTopY;
+
+      if (Math.abs(dx) < catchWidth && dy > -10 && dy < 30) {
+        // Honey trap: reduce the horizontal offset so animal lands more centered
+        let adjustedRelativeX = dx / catchWidth;
+        if (
+          abilityResult &&
+          abilityResult.honeyTrapCenteringFactor > 0
+        ) {
+          adjustedRelativeX *=
+            1 - abilityResult.honeyTrapCenteringFactor;
+        }
+
+        // Catch the animal
+        const caughtAnimal = catchAnimal(
+          animal,
+          player.player.stack.length,
+          adjustedRelativeX * 5,
+        );
+
+        // Add to player stack
+        const updatedPlayer = addToStack(player, caughtAnimal);
+        this.entities.replace(updatedPlayer);
+
+        // Remove from falling
+        this.entities.remove(animal);
+
+        // Score
+        const isPerfect = Math.abs(adjustedRelativeX) < 0.2;
+        const isGood = Math.abs(adjustedRelativeX) < 0.5;
+
+        this.gameState.addScore(animal.animal.pointValue, {
+          isPerfect,
+          isGood,
+          stackBonus: Math.pow(
+            1.1,
+            updatedPlayer.player.stack.length - 1,
+          ),
+        });
+
+        // Effects
+        if (isPerfect) {
+          this.callbacks.onPerfectCatch?.(
+            animal.transform.position.x,
+            animal.transform.position.y,
+          );
+          feedback.play("perfect");
+        } else if (isGood) {
+          this.callbacks.onGoodCatch?.(
+            animal.transform.position.x,
+            animal.transform.position.y,
+          );
+        }
+
+        feedback.play("land");
+
+        // Apply catch wobble (reduced by honey trap)
+        const wobbleImpulse =
+          abilityResult && abilityResult.wobbleReduction < 1.0
+            ? (0.2 + (animal.animal.weight - 1) * 0.1) *
+              abilityResult.wobbleReduction
+            : 0.2 + (animal.animal.weight - 1) * 0.1;
+
+        this.wobbleState = applyStackImpulse(
+          this.wobbleState,
+          adjustedRelativeX,
+          wobbleImpulse,
+        );
+
+        // Consume a honey-trap catch
+        if (
+          abilityResult &&
+          abilityResult.honeyTrapCenteringFactor > 0
+        ) {
+          this.abilityState = consumeHoneyTrapCatch(this.abilityState);
+        }
+
+        // Notify UI
+        this.callbacks.onStackChange?.(
+          updatedPlayer.player.stack.length,
+          this.gameState.canBank(updatedPlayer.player.stack.length),
+        );
+      }
+    }
+  }
+  
+  /**
+   * Update wobble state for the stack
+   */
+  private updateWobble(
+    stack: AnimalEntity[],
+    playerVelocity: number,
+    dt: number
+  ): StackWobbleState {
+    const config = DEFAULT_WOBBLE_CONFIG;
+    
+    // Update each animal's wobble
+    const newAnimals = new Map<string, AnimalWobbleState>();
+    let maxWobble = 0;
+    
+    for (let i = 0; i < stack.length; i++) {
+      const animal = stack[i];
+      let wobbleState = this.wobbleState.animals.get(animal.id);
+      
+      if (!wobbleState) {
+        wobbleState = {
+          angle: 0,
+          velocity: 0,
+          phase: Math.random() * Math.PI * 2,
+          accumulated: 0,
+        };
+      }
+      
+      // Movement-induced wobble
+      const movementWobble = Math.abs(playerVelocity) * config.movementWobbleScale;
+      const heightFactor = 1 + i * config.heightMultiplier;
+      const weight = getAnimalWeight(animal.animal.animalType);
+      
+      // Spring physics
+      const springForce = -wobbleState.angle * 5;
+      const newVelocity = (wobbleState.velocity + springForce * (dt / 1000) + movementWobble * heightFactor) * config.dampingFactor;
+      const newAngle = wobbleState.angle + newVelocity * (dt / 1000);
+      
+      newAnimals.set(animal.id, {
+        angle: newAngle,
+        velocity: newVelocity,
+        phase: wobbleState.phase,
+        accumulated: Math.max(0, wobbleState.accumulated + Math.abs(newAngle) - config.naturalDecay * (dt / 1000)),
+      });
+      
+      maxWobble = Math.max(maxWobble, Math.abs(newAngle));
+      
+      // Apply wobble to animal
+      animal.animal.wobbleAngle = newAngle;
+    }
+    
+    return {
+      animals: newAnimals,
+      overallIntensity: maxWobble / config.collapseThreshold,
+      isWarning: maxWobble >= config.warningThreshold,
+      isCollapsing: maxWobble >= config.collapseThreshold,
+      lastPlayerVelocity: playerVelocity,
+      lastPlayerAcceleration: 0,
+    };
+  }
+
+  private handleMiss(): void {
+    const stillAlive = this.gameState.loseLife();
+    this.callbacks.onMiss?.();
+    feedback.play('miss');
+    
+    if (stillAlive) {
+      const player = this.entities.get<PlayerEntity>('player');
+      if (player) {
+        const invinciblePlayer = setInvincible(player, livesConfig.invincibilityDuration);
+        this.entities.replace(invinciblePlayer);
+      }
+      this.renderer.shake(0.5);
+    }
+  }
+
+  private checkStackStability(player: PlayerEntity): void {
+    if (this.wobbleState.isCollapsing && player.player.stack.length > 0) {
+      // Stack toppled!
+      this.triggerTopple(player);
+    } else {
+      this.gameState.setDangerState(this.wobbleState.isWarning);
+      
+      if (this.wobbleState.isWarning) {
+        this.renderer.shake(0.3 * this.wobbleState.overallIntensity);
+      }
+    }
+  }
+
+  private triggerTopple(player: PlayerEntity): void {
+    this.callbacks.onStackTopple?.();
+    feedback.play('topple');
+    
+    // Clear stack
+    const updatedPlayer = clearStack(player);
+    this.entities.replace(updatedPlayer);
+    
+    // Lose life
+    const stillAlive = this.gameState.loseLife();
+    
+    if (stillAlive) {
+      const invinciblePlayer = setInvincible(updatedPlayer, livesConfig.invincibilityDuration);
+      this.entities.replace(invinciblePlayer);
+      this.renderer.shake(1);
+    }
+    
+    this.callbacks.onStackChange?.(0, false);
+  }
+
+  private updateMusicIntensity(): void {
+    const state = this.gameState.getState();
+    const player = this.entities.get<PlayerEntity>('player');
+    const stackHeight = player?.player.stack.length ?? 0;
+    
+    const stackFactor = Math.min(1, stackHeight / 10);
+    const levelFactor = Math.min(1, state.level / 10);
+    const dangerFactor = state.inDangerState ? 0.3 : 0;
+    const comboFactor = Math.min(0.2, state.combo / 20);
+    
+    const intensity = Math.min(1, stackFactor * 0.4 + levelFactor * 0.3 + dangerFactor + comboFactor);
+    feedback.setIntensity(intensity);
+  }
+}
+
+/**
+ * Create a new game instance
+ */
+export function createGame(
+  canvas: HTMLCanvasElement,
+  callbacks: GameCallbacks = {},
+  config: GameConfig = {}
+): Game {
+  return new Game(canvas, callbacks, config);
+}
