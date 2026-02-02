@@ -1,12 +1,9 @@
 /**
  * Achievement System
  * Track and unlock achievements based on gameplay
- *
- * TODO: Migrate localStorage calls to platform storage abstraction
- * (src/platform/storage.ts) for native Capacitor Preferences support.
- * The platform storage API is async, so loadStats, saveStats,
- * loadAchievements, and checkAchievements would need to become async.
  */
+
+import { STORAGE_KEYS, storage } from "@/platform";
 
 export interface Achievement {
   id: string;
@@ -245,9 +242,6 @@ const ACHIEVEMENTS: AchievementData[] = [
   },
 ];
 
-const STORAGE_KEY = "farm-follies-achievements";
-const STATS_KEY = "farm-follies-stats";
-
 /**
  * Get default stats
  */
@@ -278,20 +272,14 @@ function asNumber(value: unknown, fallback: number): number {
 }
 
 /**
- * Load stats from localStorage with runtime type validation.
+ * Load stats from platform storage with runtime type validation.
  * Each field is individually checked to guard against corrupted or
  * tampered storage data.
  */
-export function loadStats(): GameStats {
-  if (typeof window === "undefined") return getDefaultStats();
-
+export async function loadStats(): Promise<GameStats> {
   try {
-    const saved = localStorage.getItem(STATS_KEY);
-    if (saved) {
-      const parsed: unknown = JSON.parse(saved);
-      if (parsed === null || typeof parsed !== "object") {
-        return getDefaultStats();
-      }
+    const parsed = await storage.get<Record<string, unknown>>(STORAGE_KEYS.STATS);
+    if (parsed !== null && typeof parsed === "object") {
       const raw = parsed as Record<string, unknown>;
       const defaults = getDefaultStats();
       return {
@@ -319,36 +307,31 @@ export function loadStats(): GameStats {
 }
 
 /**
- * Save stats to localStorage
+ * Save stats to platform storage
  */
-export function saveStats(stats: GameStats): void {
-  if (typeof window === "undefined") return;
-
+export async function saveStats(stats: GameStats): Promise<void> {
   try {
-    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    await storage.set(STORAGE_KEYS.STATS, stats);
   } catch (e) {
     console.error("Failed to save stats:", e);
   }
 }
 
 /**
- * Load achievements from localStorage
+ * Load achievements from platform storage
  */
-export function loadAchievements(): Achievement[] {
-  const stats = loadStats();
+export async function loadAchievements(): Promise<Achievement[]> {
+  const stats = await loadStats();
 
   let unlockedIds: Set<string> = new Set();
 
-  if (typeof window !== "undefined") {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const data = JSON.parse(saved);
-        unlockedIds = new Set(data.unlockedIds || []);
-      }
-    } catch (e) {
-      console.error("Failed to load achievements:", e);
+  try {
+    const data = await storage.get<{ unlockedIds?: string[] }>(STORAGE_KEYS.ACHIEVEMENTS);
+    if (data) {
+      unlockedIds = new Set(data.unlockedIds || []);
     }
+  } catch (e) {
+    console.error("Failed to load achievements:", e);
   }
 
   return ACHIEVEMENTS.map((a) => {
@@ -370,8 +353,8 @@ export function loadAchievements(): Achievement[] {
  * Check and unlock achievements based on current stats
  * Returns newly unlocked achievements
  */
-export function checkAchievements(stats: GameStats): Achievement[] {
-  const current = loadAchievements();
+export async function checkAchievements(stats: GameStats): Promise<Achievement[]> {
+  const current = await loadAchievements();
   const newlyUnlocked: Achievement[] = [];
   const unlockedIds: string[] = [];
 
@@ -391,12 +374,10 @@ export function checkAchievements(stats: GameStats): Achievement[] {
   }
 
   // Save unlocked achievements
-  if (typeof window !== "undefined") {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ unlockedIds }));
-    } catch (e) {
-      console.error("Failed to save achievements:", e);
-    }
+  try {
+    await storage.set(STORAGE_KEYS.ACHIEVEMENTS, { unlockedIds });
+  } catch (e) {
+    console.error("Failed to save achievements:", e);
   }
 
   return newlyUnlocked;
@@ -405,12 +386,12 @@ export function checkAchievements(stats: GameStats): Achievement[] {
 /**
  * Get total achievement count by tier
  */
-export function getAchievementStats(): {
+export async function getAchievementStats(): Promise<{
   total: number;
   unlocked: number;
   byTier: Record<string, { total: number; unlocked: number }>;
-} {
-  const achievements = loadAchievements();
+}> {
+  const achievements = await loadAchievements();
 
   const byTier: Record<string, { total: number; unlocked: number }> = {
     bronze: { total: 0, unlocked: 0 },

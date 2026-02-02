@@ -1,17 +1,10 @@
 /**
  * useHighScore Hook
- * Manages high score persistence with localStorage
- *
- * TODO: Migrate to platform storage abstraction (src/platform/storage.ts)
- * instead of raw localStorage. The platform storage API is async, so this
- * hook would need to handle async initialization (e.g., load from storage
- * in useEffect and show a loading state). This ensures Capacitor Preferences
- * are used on native platforms.
+ * Manages high score persistence with platform storage abstraction
  */
 
 import { useCallback, useEffect, useState } from "react";
-
-const STORAGE_KEY = "farm-follies-highscore";
+import { STORAGE_KEYS, storage } from "@/platform";
 
 export interface UseHighScoreReturn {
   highScore: number;
@@ -20,18 +13,17 @@ export interface UseHighScoreReturn {
 }
 
 export function useHighScore(): UseHighScoreReturn {
-  const [highScore, setHighScore] = useState(() => {
-    if (typeof window === "undefined") return 0;
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? parseInt(stored, 10) : 0;
-  });
+  const [highScore, setHighScore] = useState(0);
 
-  // Sync with localStorage on mount
+  // Load high score from storage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setHighScore(parseInt(stored, 10));
-    }
+    const load = async () => {
+      const stored = await storage.get<number>(STORAGE_KEYS.HIGH_SCORE);
+      if (stored !== null && typeof stored === "number") {
+        setHighScore(stored);
+      }
+    };
+    load();
   }, []);
 
   /**
@@ -42,7 +34,7 @@ export function useHighScore(): UseHighScoreReturn {
     (score: number): boolean => {
       if (score > highScore) {
         setHighScore(score);
-        localStorage.setItem(STORAGE_KEY, String(score));
+        storage.set(STORAGE_KEYS.HIGH_SCORE, score);
         return true;
       }
       return false;
@@ -55,7 +47,7 @@ export function useHighScore(): UseHighScoreReturn {
    */
   const resetHighScore = useCallback(() => {
     setHighScore(0);
-    localStorage.removeItem(STORAGE_KEY);
+    storage.remove(STORAGE_KEYS.HIGH_SCORE);
   }, []);
 
   return {

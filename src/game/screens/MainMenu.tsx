@@ -3,7 +3,7 @@
  * Rustic farm-themed menu screen with orientation-aware background
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MenuBackground } from "../components/MenuBackground";
 import { ModeSelect } from "../components/ModeSelect";
 import { UpgradeShop } from "../components/UpgradeShop";
@@ -20,8 +20,16 @@ interface MainMenuProps {
 export function MainMenu({ onPlay, highScore }: MainMenuProps) {
   const [showModes, setShowModes] = useState(false);
   const [showShop, setShowShop] = useState(false);
-  const coins = getCoins();
+  const [coins, setCoins] = useState(0);
   const unlockedModes = getUnlockedModes();
+
+  useEffect(() => {
+    const load = async () => {
+      const c = await getCoins();
+      setCoins(c);
+    };
+    load();
+  }, [showShop]);
   const { playClick } = useUISound();
 
   const handlePlay = useCallback(() => {

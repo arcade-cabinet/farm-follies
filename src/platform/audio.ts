@@ -185,7 +185,9 @@ class PlatformAudioManager {
 
     this.backgroundTrack.volume = volume;
     this.backgroundTrack.currentTime = 0;
-    this.backgroundTrack.play().catch(() => {});
+    this.backgroundTrack.play().catch((err: unknown) => {
+      console.warn("[Audio] Background music play failed:", err);
+    });
     this.backgroundMusicPlaying = true;
     console.log("[Audio] Background music started");
   }
@@ -254,7 +256,9 @@ class PlatformAudioManager {
     for (const [key, track] of this.musicTracks) {
       track.volume = key === this.currentIntensity ? 0.5 : 0;
       track.currentTime = 0;
-      track.play().catch(() => {});
+      track.play().catch((err: unknown) => {
+        console.warn(`[Audio] Music track ${key} play failed:`, err);
+      });
     }
     this.musicPlaying = true;
   }

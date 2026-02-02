@@ -1,13 +1,9 @@
 /**
  * Upgrade/Progression System
  * Permanent upgrades that persist across games
- *
- * TODO: Migrate localStorage calls to platform storage abstraction
- * (src/platform/storage.ts) for native Capacitor Preferences support.
- * The platform storage API is async, so loadUpgradeState and
- * saveUpgradeState would need to become async, which cascades to all
- * callers (getUpgrades, purchaseUpgrade, addCoins, etc.).
  */
+
+import { STORAGE_KEYS, storage } from "@/platform";
 
 export interface Upgrade {
   id: string;
@@ -119,8 +115,6 @@ const UPGRADES_DATA: Omit<Upgrade, "currentLevel">[] = [
   },
 ];
 
-const STORAGE_KEY = "farm-follies-upgrades";
-
 /**
  * Get default upgrade state
  */
@@ -133,15 +127,13 @@ function getDefaultState(): UpgradeState {
 }
 
 /**
- * Load upgrade state from localStorage
+ * Load upgrade state from platform storage
  */
-export function loadUpgradeState(): UpgradeState {
-  if (typeof window === "undefined") return getDefaultState();
-
+export async function loadUpgradeState(): Promise<UpgradeState> {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = await storage.get<UpgradeState>(STORAGE_KEYS.UPGRADES);
     if (saved) {
-      return { ...getDefaultState(), ...JSON.parse(saved) };
+      return { ...getDefaultState(), ...saved };
     }
   } catch (e) {
     console.error("Failed to load upgrades:", e);
@@ -151,13 +143,11 @@ export function loadUpgradeState(): UpgradeState {
 }
 
 /**
- * Save upgrade state to localStorage
+ * Save upgrade state to platform storage
  */
-export function saveUpgradeState(state: UpgradeState): void {
-  if (typeof window === "undefined") return;
-
+export async function saveUpgradeState(state: UpgradeState): Promise<void> {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    await storage.set(STORAGE_KEYS.UPGRADES, state);
   } catch (e) {
     console.error("Failed to save upgrades:", e);
   }
@@ -166,8 +156,8 @@ export function saveUpgradeState(state: UpgradeState): void {
 /**
  * Get all upgrades with current levels
  */
-export function getUpgrades(): Upgrade[] {
-  const state = loadUpgradeState();
+export async function getUpgrades(): Promise<Upgrade[]> {
+  const state = await loadUpgradeState();
 
   return UPGRADES_DATA.map((data) => ({
     ...data,
@@ -178,8 +168,8 @@ export function getUpgrades(): Upgrade[] {
 /**
  * Get a specific upgrade's current value
  */
-export function getUpgradeValue(upgradeId: string): number {
-  const state = loadUpgradeState();
+export async function getUpgradeValue(upgradeId: string): Promise<number> {
+  const state = await loadUpgradeState();
   const upgrade = UPGRADES_DATA.find((u) => u.id === upgradeId);
   if (!upgrade) return 0;
 
@@ -199,8 +189,8 @@ export function getUpgradeCost(upgrade: Upgrade): number {
  * Purchase an upgrade level
  * Returns true if successful
  */
-export function purchaseUpgrade(upgradeId: string): boolean {
-  const state = loadUpgradeState();
+export async function purchaseUpgrade(upgradeId: string): Promise<boolean> {
+  const state = await loadUpgradeState();
   const upgrade = UPGRADES_DATA.find((u) => u.id === upgradeId);
 
   if (!upgrade) return false;
@@ -213,7 +203,7 @@ export function purchaseUpgrade(upgradeId: string): boolean {
 
   state.coins -= cost;
   state.upgrades[upgradeId] = currentLevel + 1;
-  saveUpgradeState(state);
+  await saveUpgradeState(state);
 
   return true;
 }
@@ -221,8 +211,8 @@ export function purchaseUpgrade(upgradeId: string): boolean {
 /**
  * Add coins from a game
  */
-export function addCoins(baseCoins: number): number {
-  const state = loadUpgradeState();
+export async function addCoins(baseCoins: number): Promise<number> {
+  const state = await loadUpgradeState();
 
   // Apply coin boost upgrade
   const coinBoostLevel = state.upgrades.coin_boost || 0;
@@ -232,7 +222,7 @@ export function addCoins(baseCoins: number): number {
   const earnedCoins = Math.floor(baseCoins * multiplier);
   state.coins += earnedCoins;
   state.totalCoinsEarned += earnedCoins;
-  saveUpgradeState(state);
+  await saveUpgradeState(state);
 
   return earnedCoins;
 }
@@ -240,8 +230,9 @@ export function addCoins(baseCoins: number): number {
 /**
  * Get current coin balance
  */
-export function getCoins(): number {
-  return loadUpgradeState().coins;
+export async function getCoins(): Promise<number> {
+  const state = await loadUpgradeState();
+  return state.coins;
 }
 
 /**
@@ -256,7 +247,7 @@ export function calculateCoinsFromScore(score: number): number {
  * Apply upgrades to game config
  * Returns modified values
  */
-export function getUpgradeModifiers(): {
+export async function getUpgradeModifiers(): Promise<{
   extraLives: number;
   wobbleReduction: number;
   coinMultiplier: number;
@@ -265,8 +256,8 @@ export function getUpgradeModifiers(): {
   abilityCooldownReduction: number;
   powerUpSpawnBonus: number;
   specialAnimalBonus: number;
-} {
-  const state = loadUpgradeState();
+}> {
+  const state = await loadUpgradeState();
 
   const getValue = (id: string) => {
     const upgrade = UPGRADES_DATA.find((u) => u.id === id)!;

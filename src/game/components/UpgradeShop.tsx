@@ -29,8 +29,11 @@ export function UpgradeShop({ onClose }: UpgradeShopProps) {
 
   // Load data
   useEffect(() => {
-    setUpgrades(getUpgrades());
-    setCoins(getCoins());
+    const load = async () => {
+      setUpgrades(await getUpgrades());
+      setCoins(await getCoins());
+    };
+    load();
   }, []);
 
   // Entrance animation
@@ -44,11 +47,11 @@ export function UpgradeShop({ onClose }: UpgradeShopProps) {
     });
   }, []);
 
-  const handlePurchase = useCallback((upgrade: Upgrade) => {
-    const success = purchaseUpgrade(upgrade.id);
+  const handlePurchase = useCallback(async (upgrade: Upgrade) => {
+    const success = await purchaseUpgrade(upgrade.id);
     if (success) {
-      setUpgrades(getUpgrades());
-      setCoins(getCoins());
+      setUpgrades(await getUpgrades());
+      setCoins(await getCoins());
       setSelectedUpgrade(null);
     }
   }, []);

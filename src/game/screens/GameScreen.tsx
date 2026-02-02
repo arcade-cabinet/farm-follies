@@ -39,7 +39,7 @@ export function GameScreen() {
   const { isMobile, fontSize, spacing } = useResponsiveScale();
 
   const handleGameOver = useCallback(
-    (score: number, bankedAnimals: number) => {
+    async (score: number, bankedAnimals: number) => {
       setFinalScore(score);
       setFinalBanked(bankedAnimals);
       const isNew = updateHighScore(score);
@@ -51,19 +51,19 @@ export function GameScreen() {
       // Award coins (except in Zen mode)
       if (currentMode !== "zen") {
         const baseCoins = calculateCoinsFromScore(score);
-        const coins = addCoins(baseCoins);
+        const coins = await addCoins(baseCoins);
         setEarnedCoins(coins);
       } else {
         setEarnedCoins(0);
       }
 
       // Update stats and check achievements
-      const stats = loadStats();
+      const stats = await loadStats();
       stats.totalScore += score;
       stats.highScore = Math.max(stats.highScore, score);
       stats.totalGames += 1;
       stats.totalBanked += bankedAnimals;
-      saveStats(stats);
+      await saveStats(stats);
 
       // Check for mode unlocks
       const newModes = checkModeUnlocks({
@@ -74,7 +74,7 @@ export function GameScreen() {
         saveUnlockedModes();
       }
 
-      const newAchievements = checkAchievements(stats);
+      const newAchievements = await checkAchievements(stats);
       if (newAchievements.length > 0) {
         setUnlockedAchievements((prev) => [...prev, ...newAchievements]);
       }
@@ -84,18 +84,18 @@ export function GameScreen() {
     [updateHighScore, currentMode]
   );
 
-  const handleLevelUp = useCallback((level: number) => {
-    console.log("Level up!", level);
+  const handleLevelUp = useCallback((_level: number) => {
+    // Level-up visual/audio feedback handled by Game.ts renderer
   }, []);
 
-  const handleLifeEarned = useCallback(() => {
-    const stats = loadStats();
+  const handleLifeEarned = useCallback(async () => {
+    const stats = await loadStats();
     stats.livesEarned += 1;
-    saveStats(stats);
+    await saveStats(stats);
   }, []);
 
   const handleStackTopple = useCallback(() => {
-    console.log("Stack toppled!");
+    // Stack topple visual/audio feedback handled by Game.ts renderer
   }, []);
 
   const {
@@ -128,24 +128,30 @@ export function GameScreen() {
 
   // Track max stack for achievements
   useEffect(() => {
-    if (screen === "playing" && stackHeight > 0) {
-      const stats = loadStats();
-      if (stackHeight > stats.maxStack) {
-        stats.maxStack = stackHeight;
-        saveStats(stats);
+    const updateMaxStack = async () => {
+      if (screen === "playing" && stackHeight > 0) {
+        const stats = await loadStats();
+        if (stackHeight > stats.maxStack) {
+          stats.maxStack = stackHeight;
+          await saveStats(stats);
+        }
       }
-    }
+    };
+    updateMaxStack();
   }, [stackHeight, screen]);
 
   // Track max combo for achievements
   useEffect(() => {
-    if (screen === "playing" && combo > 0) {
-      const stats = loadStats();
-      if (combo > stats.maxCombo) {
-        stats.maxCombo = combo;
-        saveStats(stats);
+    const updateMaxCombo = async () => {
+      if (screen === "playing" && combo > 0) {
+        const stats = await loadStats();
+        if (combo > stats.maxCombo) {
+          stats.maxCombo = combo;
+          await saveStats(stats);
+        }
       }
-    }
+    };
+    updateMaxCombo();
   }, [combo, screen]);
 
   const handlePlay = useCallback(
