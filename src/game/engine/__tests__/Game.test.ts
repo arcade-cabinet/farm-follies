@@ -9,7 +9,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GAME_CONFIG, POWER_UPS } from "../../config";
 import type { AnimalEntity } from "../entities/Animal";
-import type { PlayerEntity } from "../entities/Player";
+import { getStackTopY, type PlayerEntity } from "../entities/Player";
 import type { PowerUpEntity } from "../entities/PowerUp";
 import { createGame, Game, type GameCallbacks } from "../Game";
 
@@ -237,7 +237,7 @@ describe("Game", () => {
   function createFallingAnimalInCatchZone(g: Game): AnimalEntity {
     const player = getPlayer(g)!;
     const playerCenterX = player.transform.position.x + (player.bounds?.width ?? 80) / 2;
-    const stackTopY = player.transform.position.y;
+    const stackTopY = getStackTopY(player);
 
     // Position animal so its center aligns with player center and
     // its bottom edge is within the catch zone (stackTopY - 10 to stackTopY + 30)
