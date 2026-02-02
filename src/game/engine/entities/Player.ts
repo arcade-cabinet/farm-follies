@@ -3,7 +3,7 @@
  */
 
 import type { AnimalEntity } from "./Animal";
-import { createEntity, type Entity, Vector2 } from "./Entity";
+import { createEntity, type Entity } from "./Entity";
 
 export interface PlayerComponents {
   /** Stacked animals */

@@ -16,9 +16,9 @@
 6. Special animal variants have unique abilities
 
 ### Animals (9 Types)
-- Chicken, Duck, Turkey (light)
+- Chicken, Duck, Goose (light)
 - Pig, Goat, Sheep (medium)
-- Cow, Donkey, Horse (heavy)
+- Cow, Rooster, Horse (heavy)
 - Each has normal + special variants with abilities
 
 ### Key Mechanics

@@ -1,38 +1,73 @@
 # Active Context: Farm Follies
 
 ## Current Focus
-**Post-Refactor Cleanup and Feature Completion** - The modular engine is live and all legacy code has been deleted. Focus is on theme cleanup, power-up spawning, and polish.
+**Post-Remediation — Fully Clean Codebase.** A comprehensive 92-issue remediation plan has been completed across 9 phases. All dead code deleted, bugs fixed, legacy naming cleaned, types hardened, integrations wired, performance improved, storage migrated, and tests expanded.
 
 ## Recent Changes
 
-### Legacy Code Deletion
-All legacy files have been removed:
-- `src/game/engine/GameEngine.ts` (1935-line monolith) -- DELETED
-- `src/game/entities/Duck.ts`, `BossDuck.ts`, `Fireball.ts`, `FrozenDuck.ts`, `Particle.ts`, `PowerUp.ts` -- DELETED
-- `src/game/renderer/psyduck.ts` -- DELETED
-- `src/game/state/` directory -- DELETED (state types now live in `src/game/engine/state/`)
-- `src/game/physics/` directory -- DELETED (wobble physics now in `src/game/engine/systems/WobblePhysics.ts`)
+### Comprehensive Remediation (9 Phases)
 
-### Type Unification
-- `AnimalType` unified across codebase: 9 types are `chicken`, `duck`, `pig`, `goat`, `sheep`, `cow`, `goose`, `horse`, `rooster`
-- Previous `turkey` and `donkey` types replaced by `goose` and `rooster`
-- `SpawnSystem.AnimalArchetype` renamed to `AnimalSpawnTemplate` to avoid conflict with ECS `AnimalArchetype`
+**Phase A — Dead Code Purge (~6,800 lines deleted):**
+- `WobbleGovernor.ts`, `AnimalBehavior.ts` (dead AI systems)
+- `GameEvents.ts` (unused event bus)
+- `MovementSystem.ts` (Game.ts reimplements inline)
+- 46 unused shadcn UI components
+- `vite.config.d.ts`, `components.json`, stale type files
+- Dead functions in SpawnSystem (kept `ANIMAL_ARCHETYPES` + `AnimalSpawnTemplate` exports)
 
-### AbilitySystem Fully Integrated
-- `AbilitySystem.ts` added to `src/game/engine/systems/`
-- All 9 animal abilities implemented as pure functions
-- Integrated into `Game.ts` game loop (activation, effect updates, cooldowns)
+**Phase B — 8 Logic Bug Fixes:**
+- `getFeatherFloatMultiplier` hardcoded "duck" check → archetype lookup
+- `updateAbilityEffects` always returned `bonusScore: 0` → accumulator
+- `chooseBehaviorType` cumulative probabilities gap → normalized
+- Bush expiration (Date.now() as both args) → proper creation time tracking
+- `catchAnimal` velocity set to `undefined` → `{x: 0, y: 0}`
+- GameDirector spawn outputs ignored → wired into spawn params
+- `increaseMaxLives` silent heal → separate cap increase
+- Fire/ice `AnimalTypeConfig` removed
 
-### Modular Engine Is Production
-- `Game.ts` (~929 lines) is the active game loop, wired into `useGameEngine` hook
-- No dual-engine exports -- only the modular engine exists now
-- Production build: 844 KB
-- 328 unit tests passing across 14 test files
+**Phase C — Legacy Naming Cleanup (67 occurrences across 17 files)**
+
+**Phase D — Dependency Cleanup:**
+- Removed ~8 unused packages (framer-motion, styled-jsx, zod, etc.)
+- Moved `@capacitor/cli` to devDependencies
+
+**Phase E — Type Safety:**
+- Enabled `noImplicitAny: true` in tsconfig
+- Consolidated `AnimalType` to single canonical definition in config.ts
+- Removed `as any` casts, added monotonic counter for effect IDs
+- Consolidated duplicate `useOrientation` hook
+
+**Phase F — Integration Wiring:**
+- Double points power-up now affects scoring
+- GameDirector receives real player metrics (not hardcoded placeholders)
+- PlayTime tracked via `gameState.updatePlayTime(dt)`
+- Player stress wired into update pipeline
+
+**Phase G — Performance:**
+- `useGameEngine` callbacks stored in refs (no game instance recreation)
+- maxLives React state syncs with game state
+- Module-level counters reset on game start
+- setTimeout cleanup on unmount
+
+**Phase H — Config & Storage:**
+- Biome now lints `scripts/` and `electron/`
+- `loadStats` has runtime type validation
+- `initPlatform()` wired into app startup
+- Orientation listener memory leak fixed
+
+**Phase I — Test Coverage:**
+- 72 Game.ts integration tests (lifecycle, spawning, collision, scoring, power-ups, banking, etc.)
+- 60 GameDirector unit tests (difficulty, player modeling, mercy, spawn decisions, etc.)
+
+**localStorage Migration:**
+- `useHighScore.ts`, `achievements.ts`, `Upgrades.ts` migrated from localStorage to platform storage abstraction
+- All callers updated for async API (GameScreen, MainMenu, UpgradeShop)
+- 0 direct localStorage references remain
 
 ## Current Architecture
 ```
 src/game/engine/
-  Game.ts                # Modular orchestrator (~929 lines)
+  Game.ts                # Modular orchestrator (~1,218 lines)
   core/
     GameLoop.ts          # Frame-rate independent game loop
     ResponsiveScale.ts   # Screen scaling utilities
@@ -51,64 +86,39 @@ src/game/engine/
     WobblePhysics.ts     # Stack wobble simulation
     ScoreSystem.ts       # Points, combos, multipliers
     SpawnSystem.ts       # Animal spawn templates and logic
-    MovementSystem.ts    # Entity movement and gravity
     BushSystem.ts        # Bush growth and bounce mechanics
   rendering/
     RenderContext.ts     # Canvas wrapper with effects
     Renderer.ts          # Main rendering orchestrator
   state/
-    GameState.ts         # Immutable state type definitions
-    GameEvents.ts        # Event system types
+    GameState.ts         # State type definitions
 ```
 
 ## Current Blockers
 
-**None** -- All systems are integrated and tests are passing.
+**None** — All systems compiled, tested, and passing.
 
 ## Next Steps
 
-### Immediate
-1. Power-up spawning -- power-ups are not yet spawned in `Game.ts` (spawn logic exists in `SpawnSystem` but not wired)
-2. Theme rename -- remaining "Psyduck" / "Duck" references in UI strings and variable names
-3. Ability UI indicators -- visual feedback when abilities are ready/active on stacked animals
-
-### Short-Term
-4. E2E tests via Playwright (currently 0 E2E tests)
-5. Animal-specific sounds (moo, cluck, oink, etc.)
-6. Tutorial updates for new ability mechanics
-
-### Medium-Term
-7. Boss mode animals
-8. Achievement system updates
-9. Seasonal variants
-10. Performance optimizations
-
-## Important Patterns Learned
-
-### Type System Resolution
-- ECS `AnimalArchetype` (from `ecs/archetypes.ts`) is used for rendering (has colors)
-- `AnimalSpawnTemplate` (from `SpawnSystem.ts`) is used for game logic (has stats)
-- `AnimalType` is unified: same 9-type union used everywhere
-
-### Entity Architecture
-- New Entity system uses composition: base `Entity` + typed components
-- `Animal` has `AnimalComponents`, `Player` has `PlayerComponents`
-- All legacy inheritance-based entities (Duck, BossDuck, etc.) are deleted
-
-### AbilitySystem Pattern
-- Pure-function system like all other systems
-- State tracked in `AbilitySystemState` (active effects, cooldowns, zones)
-- `Game.ts` calls `activateAbility()` on tap, `updateAbilityEffects()` each frame
-- Passive abilities (feather_float) checked during movement updates
+### Potential Future Work
+1. Visual feedback for power-up effects (freeze overlay, invincibility glow)
+2. Level transition announcements
+3. Combo break visual/audio feedback
+4. App lifecycle pause/resume (Capacitor)
+5. E2E test expansion
+6. Boss mode animals
+7. Seasonal variants
 
 ## Active Decisions
 
 ### Single Engine
-- Legacy `GameEngine.ts` is deleted; only `Game.ts` exists
+- Only `Game.ts` exists (legacy `GameEngine.ts` deleted long ago)
 - `useGameEngine` hook imports directly from `Game.ts`
-- No backward compatibility layer needed
 
-### Renderer Uses ECS Archetypes
-- `createAnimalArchetype()` for rendering (has colors from `FARM_COLORS`)
-- `ANIMAL_ARCHETYPES` map (of `AnimalSpawnTemplate`) for game logic (has stats)
-- Two complementary type systems, clearly separated by purpose
+### Platform Storage
+- All persistence uses `src/platform/storage.ts` (async API)
+- No direct localStorage access in game code
+
+### Type Safety
+- `noImplicitAny: true`, `strictNullChecks: false`
+- `AnimalType` has single canonical definition in `config.ts` with re-exports

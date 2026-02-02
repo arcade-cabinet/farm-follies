@@ -177,8 +177,27 @@ export class EntityManager {
     const entity = this.entities.get(id);
     if (!entity) return undefined;
 
-    const updated = { ...entity, ...updates } as T;
-    this.entities.set(id, updated);
+    // Deep merge: for each key in updates, if both the existing value and
+    // the update value are plain objects, merge them rather than replacing.
+    const merged = { ...entity } as Record<string, unknown>;
+    for (const [key, value] of Object.entries(updates)) {
+      const existing = merged[key];
+      if (
+        existing !== null &&
+        value !== null &&
+        typeof existing === "object" &&
+        typeof value === "object" &&
+        !Array.isArray(existing) &&
+        !Array.isArray(value)
+      ) {
+        merged[key] = { ...(existing as Record<string, unknown>), ...(value as Record<string, unknown>) };
+      } else {
+        merged[key] = value;
+      }
+    }
+
+    const updated = merged as T;
+    this.entities.set(id, updated as Entity);
     return updated;
   }
 

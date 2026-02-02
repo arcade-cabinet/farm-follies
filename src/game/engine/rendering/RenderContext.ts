@@ -15,6 +15,7 @@ export class RenderContext {
   readonly ctx: CanvasRenderingContext2D;
 
   private _scale: ScaleFactors;
+  private flashDuration: number = 200;
   private state: RenderState = {
     screenShake: 0,
     flashColor: null,
@@ -107,7 +108,7 @@ export class RenderContext {
 
     // Decay flash
     if (this.state.flashAlpha > 0) {
-      this.state.flashAlpha -= dt / 200;
+      this.state.flashAlpha -= dt / this.flashDuration;
       if (this.state.flashAlpha < 0) {
         this.state.flashAlpha = 0;
         this.state.flashColor = null;
@@ -128,6 +129,7 @@ export class RenderContext {
   flash(color: string, duration: number = 200): void {
     this.state.flashColor = color;
     this.state.flashAlpha = 1;
+    this.flashDuration = duration;
   }
 
   /**

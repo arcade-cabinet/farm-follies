@@ -174,9 +174,7 @@ const momentumDecay = Math.exp(-deltaTime / 120);
 ```
 src/game/
 ├── ai/
-│   ├── GameDirector.ts      # YUKA-powered game orchestration
-│   ├── WobbleGovernor.ts    # Goal-driven wobble control
-│   └── AnimalBehavior.ts    # Animal steering behaviors
+│   └── GameDirector.ts      # YUKA-powered game orchestration, difficulty, player modeling
 │
 ├── config.ts                # Game constants, animal types, power-ups
 ├── audio.ts                 # Tone.js audio system
@@ -224,13 +222,11 @@ src/game/
 | Library | Version | Purpose | Status |
 |---------|---------|---------|--------|
 | Tone.js | ^15.1.22 | Audio synthesis & music | Integrated |
-| YUKA | ^0.7.8 | Game AI/goal-driven behavior | Integrated |
+| YUKA | ^0.7.8 | Game AI/goal-driven behavior | Integrated (GameDirector only) |
 | @types/yuka | ^0.7.4 | TypeScript types for YUKA | Integrated |
-| Babylon.js | ^8.49.6 | 3D graphics | Available, unused |
 | anime.js | ^4.3.5 | UI animations | Integrated |
-| Framer Motion | 12.9.2 | React animations | Available |
 | Biome | 2.3.x | Linting & formatting | Configured |
-| Vitest | 4.x | Unit testing | Configured |
+| Vitest | 4.x | Unit testing (441 tests) | Configured |
 | Playwright | 1.58+ | E2E testing | Configured |
 | happy-dom | 20.x | DOM simulation for tests | Configured |
 
@@ -293,9 +289,10 @@ physics: {
 6. Daily challenges
 
 ### Technical Debt
-1. Could extract ResponsiveScale to separate module
+1. `strictNullChecks: false` -- enabling would require widespread refactoring
 2. No error boundaries
-3. Could use OffscreenCanvas for performance
+3. Some visual feedback gaps (freeze/invincibility overlays)
+4. No Capacitor app lifecycle integration (pause on background)
 
 ---
 
@@ -358,4 +355,64 @@ pnpm build
 
 ---
 
-*Last updated: Farm Follies theme transition complete*
+### Phase 15: Comprehensive Remediation (92 Issues)
+**Complete codebase audit and remediation across 9 phases:**
+
+#### Phase A: Dead Code Purge (~6,800 lines)
+- Deleted WobbleGovernor.ts, AnimalBehavior.ts (dead AI systems)
+- Deleted GameEvents.ts (unused event bus), MovementSystem.ts (reimplemented inline)
+- Deleted 46 unused shadcn UI components
+- Removed stale type files, config files, build artifacts
+
+#### Phase B: 8 Logic Bug Fixes
+- Fixed feather_float hardcoded "duck" check
+- Fixed ability bonusScore always returning 0
+- Fixed behavior probability distribution gaps
+- Fixed bush expiration time tracking
+- Fixed velocity set to undefined on catch
+- Wired GameDirector spawn outputs into spawn params
+- Fixed increaseMaxLives silent heal
+- Removed legacy fire/ice AnimalTypeConfig
+
+#### Phase C: Legacy Naming Cleanup (67 occurrences)
+
+#### Phase D: Dependency Cleanup
+- Removed ~8 unused packages (framer-motion, styled-jsx, zod, etc.)
+
+#### Phase E: Type Safety Hardening
+- Enabled `noImplicitAny: true`
+- Consolidated AnimalType to single canonical definition
+- Removed all `as any` casts
+- Added monotonic counter for effect IDs
+
+#### Phase F: Integration Wiring
+- Double points power-up now affects scoring
+- GameDirector receives real player metrics
+- PlayTime tracking wired in
+- Player stress wired into update pipeline
+
+#### Phase G: Performance Fixes
+- useGameEngine callbacks stored in refs
+- maxLives React state syncs with game state
+- Module-level counters reset on game start
+- setTimeout cleanup on unmount
+
+#### Phase H: Config & Storage Fixes
+- Biome lints scripts/ and electron/
+- loadStats has runtime type validation
+- initPlatform() wired into app startup
+- Orientation listener memory leak fixed
+
+#### Phase I: Test Coverage Expansion
+- 72 Game.ts integration tests
+- 60 GameDirector unit tests
+- Total: 441 tests across 15 files
+
+#### localStorage Migration
+- useHighScore, achievements, Upgrades migrated to platform storage
+- All callers updated for async API
+- 0 direct localStorage references remain
+
+---
+
+*Last updated: Post-remediation, all 92 issues resolved, 441 tests passing*

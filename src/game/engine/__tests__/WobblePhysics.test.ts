@@ -55,13 +55,11 @@ describe("WobblePhysics", () => {
       expect(state.angle).toBe(0.5);
     });
 
-    it("should have random phase", () => {
-      const state1 = createAnimalWobbleState();
-      const state2 = createAnimalWobbleState();
+    it("should have random phase within [0, 2*PI)", () => {
+      const state = createAnimalWobbleState();
 
-      // Phases should be different (probabilistically)
-      // This test may occasionally fail due to randomness
-      expect(state1.phase).not.toBe(state2.phase);
+      expect(state.phase).toBeGreaterThanOrEqual(0);
+      expect(state.phase).toBeLessThan(Math.PI * 2);
     });
   });
 
@@ -129,8 +127,10 @@ describe("WobblePhysics", () => {
     });
 
     it("should amplify wobble at higher stack positions", () => {
+      const initialState = createAnimalWobbleState();
+
       const bottomAnimal = updateAnimalWobble(
-        createAnimalWobbleState(),
+        { ...initialState },
         0, // Bottom of stack
         0.1,
         16,
@@ -139,7 +139,7 @@ describe("WobblePhysics", () => {
       );
 
       const topAnimal = updateAnimalWobble(
-        createAnimalWobbleState(),
+        { ...initialState },
         5, // Higher in stack
         0.1,
         16,
@@ -147,8 +147,8 @@ describe("WobblePhysics", () => {
         1.0
       );
 
-      // Top animal should have more wobble (eventually)
-      // Note: This depends on height multiplier in config
+      // Top animal should have more wobble than bottom animal
+      expect(Math.abs(topAnimal.angle)).toBeGreaterThanOrEqual(Math.abs(bottomAnimal.angle));
       expect(DEFAULT_WOBBLE_CONFIG.heightMultiplier).toBeGreaterThan(0);
     });
   });
@@ -191,8 +191,9 @@ describe("WobblePhysics", () => {
         DEFAULT_WOBBLE_CONFIG
       );
 
-      // Should eventually trigger warning
+      // Should trigger warning state and have positive intensity
       expect(updated.overallIntensity).toBeGreaterThan(0);
+      expect(updated.isWarning).toBe(true);
     });
 
     it("should track player velocity for acceleration calculation", () => {

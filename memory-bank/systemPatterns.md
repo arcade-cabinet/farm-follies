@@ -12,7 +12,7 @@ The game uses a clean modular architecture with clear separation of concerns:
 |  GameScreen.tsx                                      |
 |    +-- Canvas + useGameEngine hook                   |
 +-----------------------------------------------------+
-|  Game.ts (~929 lines, modular orchestrator)          |
+|  Game.ts (~1,218 lines, modular orchestrator)        |
 |    Composes systems, managers, entities, rendering   |
 +-----------------------------------------------------+
 |  Systems (Pure Functions)    | Managers (Stateful)   |
@@ -21,8 +21,8 @@ The game uses a clean modular architecture with clear separation of concerns:
 |    WobblePhysics             |                       |
 |    ScoreSystem               | Entities (Data)       |
 |    SpawnSystem               |   Entity (base)       |
-|    MovementSystem            |   Animal (+ variants) |
-|    BushSystem                |   Player (farmer)     |
+|    BushSystem                |   Animal (+ variants) |
+|                              |   Player (farmer)     |
 +-----------------------------------------------------+
 |  Renderers (Canvas Drawing)                          |
 |    animals.ts       background.ts                    |
@@ -30,7 +30,10 @@ The game uses a clean modular architecture with clear separation of concerns:
 |    farmer.ts                                         |
 +-----------------------------------------------------+
 |  AI (YUKA goal-driven)                               |
-|    GameDirector     WobbleGovernor    AnimalBehavior |
+|    GameDirector (spawn orchestration, difficulty)     |
++-----------------------------------------------------+
+|  Platform Layer                                      |
+|    storage, feedback, haptics, audio, appLifecycle   |
 +-----------------------------------------------------+
 ```
 
@@ -46,7 +49,7 @@ function activateAbility(state, animal, player, entities): AbilitySystemState
 ```
 
 **Benefits:**
-- Testable in isolation
+- Testable in isolation (441 tests across 15 files)
 - Deterministic behavior
 - Easy to reason about
 
@@ -67,24 +70,18 @@ interface AnimalEntity extends Entity {
 }
 ```
 
-### 4. Event-Driven Side Effects
-Game logic emits events; subscribers handle side effects:
-```typescript
-emitGameEvent('animal:caught', { animal, position, combo });
-// Audio system subscribes and plays sound
-```
-
-### 5. Manager Classes for State
+### 4. Manager Classes for State
 Managers encapsulate state with controlled access:
 ```typescript
 class GameStateManager {
   private state: GameSessionState;
   addScore(points, options): number;
   loseLife(): boolean;
+  updatePlayTime(dt): void;
 }
 ```
 
-### 6. AbilitySystem Integration
+### 5. AbilitySystem Integration
 Abilities follow the same pure-function pattern as other systems:
 ```typescript
 // Game.ts orchestrates the lifecycle:
@@ -92,8 +89,24 @@ Abilities follow the same pure-function pattern as other systems:
 // 2. Resolve ability type        -> resolveAbilityType()
 // 3. Activate ability            -> activateAbility()
 // 4. Each frame update effects   -> updateAbilityEffects()
-// 5. Passive checks in movement  -> getFeatherFloatMultiplier(), getMudSlowFactor()
+// 5. Passive abilities in movement -> getFeatherFloatMultiplier(), getMudSlowFactor()
 // 6. Stack cooldown ticks        -> updateStackAbilityCooldowns()
+```
+
+### 6. Platform Storage Abstraction
+All persistence uses async platform storage (never direct localStorage):
+```typescript
+import { storage, STORAGE_KEYS } from "@/platform";
+const data = await storage.get<T>(STORAGE_KEYS.KEY);
+await storage.set(STORAGE_KEYS.KEY, data);
+```
+
+### 7. Ref-Based Callback Pattern (React)
+`useGameEngine` stores callbacks in refs to prevent game instance recreation:
+```typescript
+const optionsRef = useRef(options);
+optionsRef.current = options; // Updated every render
+// useEffect has [] deps — game created once
 ```
 
 ## Key Technical Decisions
@@ -121,16 +134,21 @@ Abilities follow the same pure-function pattern as other systems:
 
 ### 5. Unified AnimalType
 - Single 9-type union: chicken, duck, pig, goat, sheep, cow, goose, horse, rooster
-- Used consistently across entities, spawn system, ECS archetypes, and renderers
+- Canonical definition in `config.ts` with re-exports
 - `AnimalSpawnTemplate` (game stats) vs `AnimalArchetype` (rendering colors) avoids naming conflicts
+
+### 6. Single AI System (GameDirector)
+- Only GameDirector is active (WobbleGovernor and AnimalBehavior were deleted as dead code)
+- Receives real player metrics: catch rate, miss timing, perfect timing
+- Drives spawn decisions, difficulty scaling, mercy mode
 
 ## Component Relationships
 
 ### Spawn Flow
 ```
-GameDirector -> decides spawn
+GameDirector -> decides spawn (type, behavior, velocity, position)
      |
-SpawnSystem -> creates AnimalEntity via AnimalSpawnTemplate
+Game.ts -> creates AnimalEntity using director decisions
      |
 Tornado -> visual spawn effect
      |
@@ -145,7 +163,7 @@ Player position updated
      |
 CollisionSystem -> check catch
      |
-ScoreSystem -> calculate points
+ScoreSystem -> calculate points (x2 if doublePointsActive)
      |
 WobblePhysics -> apply impact
      |
@@ -162,7 +180,7 @@ resolveAbilityType() -> determines ability from AnimalSpawnTemplate
      |
 activateAbility() -> creates active effect in AbilitySystemState
      |
-updateAbilityEffects() each frame -> applies effects (slow zones, shields, etc.)
+updateAbilityEffects() each frame -> applies effects, accumulates bonusScore
      |
 Effect expires -> removed from state, cooldown starts
 ```
@@ -205,6 +223,6 @@ Base points (animal type)
   x Catch bonus (perfect/good)
   x Stack bonus (exponential)
   x Combo multiplier
-  x Power-up multiplier
+  x Double points multiplier (if active)
   = Final score
 ```

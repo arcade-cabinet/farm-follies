@@ -131,7 +131,15 @@ export function createRandomAnimal(x: number, y: number, level: number): AnimalE
     }
   }
 
-  const archetype = ANIMAL_ARCHETYPES.get(selectedType)!;
+  const archetype = ANIMAL_ARCHETYPES.get(selectedType);
+  if (!archetype) {
+    // Fallback to chicken if selected type has no archetype
+    const fallback = ANIMAL_ARCHETYPES.get("chicken");
+    if (!fallback) {
+      throw new Error(`No archetype found for animal type: ${selectedType}`);
+    }
+    return createAnimal(selectedType, fallback.variants[0], x, y, fallback);
+  }
 
   // Select variant
   const specialChance = 0.15 + level * 0.01;
@@ -147,7 +155,9 @@ export function createRandomAnimal(x: number, y: number, level: number): AnimalE
       };
 
       let totalRarityWeight = 0;
-      specialVariants.forEach((v) => (totalRarityWeight += rarityWeights[v.rarity] ?? 0.1));
+      for (const v of specialVariants) {
+        totalRarityWeight += rarityWeights[v.rarity] ?? 0.1;
+      }
 
       let rarityRandom = Math.random() * totalRarityWeight;
       for (const v of specialVariants) {

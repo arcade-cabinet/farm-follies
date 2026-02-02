@@ -210,7 +210,7 @@ export function applyForce(entity: Entity, forceX: number, forceY: number): void
  * Clone an entity with a new ID
  */
 export function cloneEntity(entity: Entity, newId?: string): Entity {
-  return {
+  const cloned: Entity = {
     ...entity,
     id: newId ?? generateEntityId(entity.type),
     transform: {
@@ -226,4 +226,24 @@ export function cloneEntity(entity: Entity, newId?: string): Entity {
       : undefined,
     bounds: entity.bounds ? { ...entity.bounds } : undefined,
   };
+
+  // Deep copy any additional custom components (beyond transform/velocity/bounds)
+  for (const key of Object.keys(entity)) {
+    if (
+      key === "id" ||
+      key === "type" ||
+      key === "active" ||
+      key === "transform" ||
+      key === "velocity" ||
+      key === "bounds"
+    ) {
+      continue;
+    }
+    const value = (entity as unknown as Record<string, unknown>)[key];
+    if (value !== null && typeof value === "object") {
+      (cloned as unknown as Record<string, unknown>)[key] = JSON.parse(JSON.stringify(value));
+    }
+  }
+
+  return cloned;
 }

@@ -602,35 +602,28 @@ describe("GameDirector", () => {
   // =========================================================================
   describe("Intensity Updates", () => {
     it("mercy goal sets desiredIntensity to 0.2", () => {
-      director.setActiveGoal("mercy");
-      director.updateGameState(makeGameState());
+      // Create a game state that triggers the mercy evaluator to win:
+      // lives=1 gives lowLives=0.5, high recentMisses gives 0.3 more
+      const mercyState = makeGameState({
+        lives: 1,
+        recentMisses: 5,
+        timeSinceLastMiss: 100,
+        stackHeight: 1,
+        combo: 0,
+        score: 50,
+      });
 
-      // Manually call updateIntensity via update but prevent brain from
-      // overriding the goal by removing all evaluators first.
-      // Instead, test the desiredIntensity after a single indirect call.
-      // We can access desiredIntensity since it is public.
-      // Setting the goal and triggering updateIntensity via the public path:
-      // updateIntensity is private but gets called during update().
-      // The brain.execute() in update() may override the goal, so instead
-      // we just verify the mapping directly by checking desiredIntensity
-      // after manually setting the goal and checking the intensity formula.
+      // Feed the mercy-triggering state repeatedly so the brain selects mercy
+      director.intensity = 0.8;
+      for (let i = 0; i < 100; i++) {
+        director.updateGameState(mercyState);
+        director.update(0.016);
+      }
 
-      // After setActiveGoal("mercy"), the desiredIntensity should be 0.2
-      // when updateIntensity is triggered. We can test this via update()
-      // by neutralising the brain. The simplest approach: test that setting
-      // mercy and calling update moves intensity toward 0.2.
-      director.setActiveGoal("mercy");
-
-      // Bypass brain by directly verifying that desiredIntensity matches
-      // the expected value. Since desiredIntensity is a public property:
-      // We need to call updateIntensity - let's do one update then re-set goal
-      // before next frame to test convergence direction.
-      director.update(0.016);
-      // brain.execute may change goal, but intensity moved this frame:
-      // intensity += (desiredIntensity - intensity) * 0.1
-      // After setting mercy: desired = 0.2, intensity was 0.3
-      // So intensity should have moved toward 0.2 (decreased)
-      expect(director.desiredIntensity).toBeDefined();
+      // Brain should have selected mercy goal, and intensity converges to 0.2
+      expect(director.getActiveGoal()).toBe("mercy");
+      expect(director.desiredIntensity).toBe(0.2);
+      expect(director.intensity).toBeLessThan(0.3);
     });
 
     it("intensity value stays within reasonable bounds after updates", () => {
@@ -640,7 +633,7 @@ describe("GameDirector", () => {
       }
       // Intensity should always be between 0 and 1
       expect(director.intensity).toBeGreaterThanOrEqual(0);
-      expect(director.intensity).toBeLessThanOrEqual(1.1);
+      expect(director.intensity).toBeLessThanOrEqual(1);
     });
 
     it("intensity smoothly approaches desired value", () => {

@@ -189,7 +189,7 @@ export interface GameCallbacks {
   onPerfectCatch: (x: number, y: number) => void;
   onGoodCatch: (x: number, y: number) => void;
   onMiss: () => void;
-  onBankComplete: (animalsbanked: number) => void;
+  onBankComplete: (animalsBanked: number) => void;
   onLevelUp: (level: number) => void;
   onLifeEarned: () => void;
   onDangerState: (inDanger: boolean) => void;

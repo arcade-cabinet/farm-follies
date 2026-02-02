@@ -449,4 +449,7 @@ async function captureAudio() {
   console.log(`Generated capture page: ${htmlPath}`);
 }
 
-captureAudio().catch(console.error);
+captureAudio().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

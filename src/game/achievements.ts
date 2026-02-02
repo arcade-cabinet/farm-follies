@@ -327,8 +327,8 @@ export async function loadAchievements(): Promise<Achievement[]> {
 
   try {
     const data = await storage.get<{ unlockedIds?: string[] }>(STORAGE_KEYS.ACHIEVEMENTS);
-    if (data) {
-      unlockedIds = new Set(data.unlockedIds || []);
+    if (data != null && typeof data === "object" && Array.isArray(data.unlockedIds)) {
+      unlockedIds = new Set(data.unlockedIds);
     }
   } catch (e) {
     console.error("Failed to load achievements:", e);

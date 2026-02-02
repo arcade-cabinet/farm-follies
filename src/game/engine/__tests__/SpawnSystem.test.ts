@@ -40,6 +40,8 @@ describe("SpawnSystem", () => {
         "sheep",
         "goat",
         "horse",
+        "goose",
+        "rooster",
       ];
       for (const type of expectedTypes) {
         expect(ANIMAL_ARCHETYPES.has(type)).toBe(true);

@@ -3,14 +3,15 @@
 ## Technology Stack
 
 ### Core
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool
-- **HTML Canvas** - Game rendering
+- **React 19** - UI framework
+- **TypeScript 5.9** - Type safety (`noImplicitAny: true`, `strictNullChecks: false`)
+- **Vite 6.4** - Build tool
+- **HTML Canvas** - Game rendering (procedural 2D, no sprites)
 
 ### Testing
-- **Vitest** - Unit testing (328 tests across 14 files)
-- **Playwright** - E2E testing (configured, no tests written yet)
+- **Vitest 4.0** - Unit testing (441 tests across 15 files)
+- **Playwright** - E2E testing (configured, minimal tests)
+- **happy-dom** - DOM simulation for tests
 
 ### Tooling
 - **pnpm** - Package manager
@@ -20,12 +21,14 @@
 ```
 src/
   game/
-    config.ts              # Game constants, colors, animal types
+    config.ts              # Game constants, colors, animal types (canonical AnimalType)
+    audio.ts               # Tone.js audio system
+    achievements.ts        # Achievement tracking (async, platform storage)
     ecs/                   # ECS type definitions (rendering archetypes)
-      types.ts             # Component/entity types, AnimalType union
+      types.ts             # Component/entity types, re-exports AnimalType
       archetypes.ts        # Animal rendering factories (colors)
     engine/                # Modular game engine
-      Game.ts              # Orchestrator (~929 lines)
+      Game.ts              # Orchestrator (~1,218 lines)
       core/                # Game loop, responsive scaling
         GameLoop.ts
         ResponsiveScale.ts
@@ -44,14 +47,12 @@ src/
         WobblePhysics.ts   # Stack wobble simulation
         ScoreSystem.ts     # Points, combos, multipliers
         SpawnSystem.ts     # Animal spawn templates (AnimalSpawnTemplate)
-        MovementSystem.ts  # Entity movement and gravity
         BushSystem.ts      # Bush growth and bounce
       rendering/           # Canvas rendering
         RenderContext.ts   # Canvas wrapper with effects
         Renderer.ts        # Rendering orchestrator
-      state/               # Immutable state types
+      state/               # State types
         GameState.ts       # State type definitions
-        GameEvents.ts      # Event system types
       __tests__/           # Unit tests (11 test files)
     renderer/              # Drawing functions
       animals.ts           # Animal rendering (9 types)
@@ -59,25 +60,42 @@ src/
       farmer.ts            # Player rendering
       bush.ts              # Bush rendering
       background.ts        # Background rendering
-    ai/                    # AI systems (YUKA goal-driven)
-      GameDirector.ts      # Spawn orchestration, difficulty
-      WobbleGovernor.ts    # Stack wobble control
-      AnimalBehavior.ts    # Steering behaviors
+    ai/                    # AI systems
+      GameDirector.ts      # YUKA-powered spawn orchestration, difficulty, player modeling
     hooks/                 # React hooks
-      useGameEngine.ts     # React-to-engine bridge (imports Game.ts)
+      useGameEngine.ts     # React-to-engine bridge
+      useHighScore.ts      # High score persistence (async, platform storage)
+      useOrientation.ts    # Screen orientation detection
+      useResponsiveScale.ts
+      useUISound.ts
     screens/               # React screens
-  components/              # React components
-  platform/                # Platform abstractions (audio, haptics, storage)
+      GameScreen.tsx       # Main game screen
+      MainMenu.tsx         # Menu (async coin loading)
+      GameOverScreen.tsx
+      SplashScreen.tsx
+    components/            # React components (HUD, buttons, modals)
+    progression/           # Upgrades and coin system (async, platform storage)
+      Upgrades.ts
+    modes/                 # Game mode definitions
+  platform/                # Platform abstractions
+    index.ts               # Barrel exports (feedback, storage, haptics, platform)
+    audio.ts               # Audio initialization and playback
+    feedback.ts            # Unified audio + haptics
+    haptics.ts             # Native haptic feedback
+    storage.ts             # Capacitor Preferences / localStorage wrapper
+    platform.ts            # Platform detection
+    appLifecycle.ts        # App state management
+  components/              # Shared UI components
 ```
 
 ## Key Commands
 ```bash
 pnpm install          # Install dependencies
 pnpm dev              # Start dev server (localhost:5173)
-pnpm build:prod       # Production build (844 KB)
+pnpm build:prod       # Production build
 pnpm test             # Run tests (watch mode)
-pnpm test:run         # Run tests (single run, 328 passing)
-pnpm tscgo --noEmit   # Fast type check
+pnpm test:run         # Run tests (single run, 441 passing)
+pnpm tsc --noEmit     # TypeScript check (0 errors)
 pnpm lint             # Biome lint check
 pnpm check            # Lint + type check combined
 ```
@@ -95,13 +113,11 @@ pnpm check            # Lint + type check combined
 - Responsive to screen size
 
 ## Dependencies
-- `@/platform` - Audio feedback abstraction
-- `anime.js` - Animation library (for bush growth)
-- `yuka` - AI library (GameDirector, WobbleGovernor, AnimalBehavior)
+- `anime.js` - Animation library (UI animations)
+- `yuka` - AI library (GameDirector)
 - `tone` - Audio synthesis (dev mode procedural sounds)
 
 ## Known Technical Debt
-1. `src/game/engine/state/GameState.ts` retains legacy state types used by SpawnSystem and AI -- could be consolidated with entity types
-2. ~~`DuckBehavior.ts` retains "Duck" naming~~ -- RESOLVED: renamed to `AnimalBehavior.ts` with `AnimalBehaviorType`, `AnimalAIState`, `applyAnimalAI()`
-3. Some tests use `as any` casts for partial mocks
-4. Power-up spawning not yet wired into Game.ts
+1. `strictNullChecks: false` — enabling would require widespread refactoring
+2. Some visual feedback gaps (freeze/invincibility overlays, bush growth indicator)
+3. No Capacitor app lifecycle integration (pause on background)

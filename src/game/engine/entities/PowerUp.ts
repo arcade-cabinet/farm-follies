@@ -55,7 +55,8 @@ export function createPowerUp(x: number, y: number, type: PowerUpType): PowerUpE
  */
 export function updatePowerUpBob(powerUp: PowerUpEntity, dt: number): PowerUpEntity {
   const { bobSpeed, bobAmount } = GAME_CONFIG.powerUps;
-  const newPhase = powerUp.powerup.bobPhase + bobSpeed * dt;
+  const TWO_PI = Math.PI * 2;
+  const newPhase = (powerUp.powerup.bobPhase + bobSpeed * dt) % TWO_PI;
 
   return {
     ...powerUp,

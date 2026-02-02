@@ -15,6 +15,7 @@ const ABILITY_STYLES: Record<string, { color: string; glow: string; label: strin
   honey_trap: { color: "#FFA500", glow: "rgba(255, 165, 0, 0.6)", label: "TRP" },
   crow_call: { color: "#FF4500", glow: "rgba(255, 69, 0, 0.6)", label: "MAG" },
   hay_storm: { color: "#D2B48C", glow: "rgba(210, 180, 140, 0.6)", label: "HAY" },
+  feather_float: { color: "#4FC3F7", glow: "rgba(79, 195, 247, 0.6)", label: "FLT" },
 };
 
 interface AbilityIndicatorProps {
