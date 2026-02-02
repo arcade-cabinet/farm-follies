@@ -165,7 +165,10 @@ export class Game {
 
     // Initialize render context
     this.renderCtx = createRenderContext(canvas, this.scale);
-    this.renderer = new Renderer(this.renderCtx, { showDebug: config.showDebug ?? false });
+    this.renderer = new Renderer(this.renderCtx, {
+      showDebug: config.showDebug,
+      showHitboxes: config.showDebug,
+    });
 
     // Initialize managers
     this.entities = createEntityManager();
@@ -362,6 +365,74 @@ export class Game {
    */
   get canBank(): boolean {
     return this.gameState.canBank(this.stackHeight);
+  }
+
+  /**
+   * Get the canvas element (for test governor to dispatch events)
+   */
+  getCanvas(): HTMLCanvasElement {
+    return this.canvas;
+  }
+
+  /**
+   * Test API: read-only snapshot of game state for automated play.
+   * Returns positions of the player and all falling animals so an
+   * external governor can decide where to move.
+   */
+  getTestSnapshot(): {
+    player: { x: number; y: number; width: number; height: number } | null;
+    fallingAnimals: Array<{
+      id: string;
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      velocityY: number;
+    }>;
+    score: number;
+    lives: number;
+    level: number;
+    combo: number;
+    stackHeight: number;
+    bankedAnimals: number;
+    canBank: boolean;
+    isPlaying: boolean;
+    canvasWidth: number;
+    canvasHeight: number;
+  } {
+    const player = this.entities.get<PlayerEntity>("player");
+    const animals = this.entities.getByType<AnimalEntity>("animal");
+
+    return {
+      player: player
+        ? {
+            x: player.transform.position.x,
+            y: player.transform.position.y,
+            width: player.bounds?.width ?? 0,
+            height: player.bounds?.height ?? 0,
+          }
+        : null,
+      fallingAnimals: animals
+        .filter((a) => a.animal.state === "falling")
+        .map((a) => ({
+          id: a.id,
+          x: a.transform.position.x + (a.bounds?.width ?? 0) / 2,
+          y: a.transform.position.y,
+          width: a.bounds?.width ?? 0,
+          height: a.bounds?.height ?? 0,
+          velocityY: a.velocity?.linear.y ?? 0,
+        })),
+      score: this.gameState.score,
+      lives: this.gameState.lives,
+      level: this.gameState.level,
+      combo: this.gameState.getState().combo,
+      stackHeight: this.stackHeight,
+      bankedAnimals: this.gameState.bankedAnimals,
+      canBank: this.canBank,
+      isPlaying: this._isPlaying,
+      canvasWidth: this.canvas.width,
+      canvasHeight: this.canvas.height,
+    };
   }
 
   // Private methods

@@ -154,6 +154,11 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
     const engine = new Game(canvas, callbacks);
     engineRef.current = engine;
 
+    // Expose game instance in dev/test mode for E2E governor
+    if (import.meta.env.DEV) {
+      (window as unknown as Record<string, unknown>).__game = engine;
+    }
+
     return () => {
       engine.destroy();
       for (const t of timeoutsRef.current) clearTimeout(t);

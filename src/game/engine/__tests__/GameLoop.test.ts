@@ -151,6 +151,30 @@ describe("GameLoop", () => {
     loop.stop();
   });
 
+  it("should reset timing when tab becomes visible", () => {
+    loop = new GameLoop({
+      fixedUpdate: () => fixedUpdateCalls++,
+      update: () => updateCalls++,
+      render: () => renderCalls++,
+    });
+
+    const addSpy = vi.spyOn(document, "addEventListener");
+    const removeSpy = vi.spyOn(document, "removeEventListener");
+
+    loop.start();
+
+    // Should have added visibilitychange listener
+    expect(addSpy).toHaveBeenCalledWith("visibilitychange", expect.any(Function));
+
+    loop.stop();
+
+    // Should have removed visibilitychange listener
+    expect(removeSpy).toHaveBeenCalledWith("visibilitychange", expect.any(Function));
+
+    addSpy.mockRestore();
+    removeSpy.mockRestore();
+  });
+
   it("should not start if already running", () => {
     let startCount = 0;
 
