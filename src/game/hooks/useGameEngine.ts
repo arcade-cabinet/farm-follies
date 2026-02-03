@@ -155,7 +155,8 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
     engineRef.current = engine;
 
     // Expose game instance in dev/test mode for E2E governor
-    if (import.meta.env.DEV) {
+    // Expose game instance in dev/test mode for E2E governor
+    if (import.meta.env.DEV && import.meta.env.MODE !== 'production') {
       (window as unknown as Record<string, unknown>).__game = engine;
     }
 
