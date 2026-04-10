@@ -45,3 +45,4 @@ vite.config.d.ts
 public/assets/audio/
 public/assets/video/
 .vite/
+pocs/

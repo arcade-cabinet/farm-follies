@@ -224,4 +224,135 @@ describe("InputManager", () => {
       expect(state.isDragging).toBe(false);
     });
   });
+
+  describe("keyboard input", () => {
+    it("should initialize with keyboard inactive", () => {
+      manager = new InputManager(element);
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(0);
+      expect(state.isKeyboardActive).toBe(false);
+    });
+
+    it("should set direction -1 on ArrowLeft keydown", () => {
+      manager = new InputManager(element);
+
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowLeft", bubbles: true }));
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(-1);
+      expect(state.isKeyboardActive).toBe(true);
+    });
+
+    it("should set direction 1 on ArrowRight keydown", () => {
+      manager = new InputManager(element);
+
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowRight", bubbles: true }));
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(1);
+      expect(state.isKeyboardActive).toBe(true);
+    });
+
+    it("should set direction -1 on KeyA keydown", () => {
+      manager = new InputManager(element);
+
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyA", bubbles: true }));
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(-1);
+      expect(state.isKeyboardActive).toBe(true);
+    });
+
+    it("should set direction 1 on KeyD keydown", () => {
+      manager = new InputManager(element);
+
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyD", bubbles: true }));
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(1);
+      expect(state.isKeyboardActive).toBe(true);
+    });
+
+    it("should clear direction on keyup", () => {
+      manager = new InputManager(element);
+
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowRight", bubbles: true }));
+      expect(manager.getState().isKeyboardActive).toBe(true);
+
+      window.dispatchEvent(new KeyboardEvent("keyup", { code: "ArrowRight", bubbles: true }));
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(0);
+      expect(state.isKeyboardActive).toBe(false);
+    });
+
+    it("should handle both keys held (cancel out)", () => {
+      manager = new InputManager(element);
+
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowLeft", bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowRight", bubbles: true }));
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(0);
+      expect(state.isKeyboardActive).toBe(true);
+    });
+
+    it("should keep direction when one of two keys is released", () => {
+      manager = new InputManager(element);
+
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowLeft", bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowRight", bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent("keyup", { code: "ArrowLeft", bubbles: true }));
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(1);
+      expect(state.isKeyboardActive).toBe(true);
+    });
+
+    it("should not respond to keyboard when disabled", () => {
+      manager = new InputManager(element);
+
+      manager.disable();
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowRight", bubbles: true }));
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(0);
+      expect(state.isKeyboardActive).toBe(false);
+    });
+
+    it("should clear keyboard state on reset", () => {
+      manager = new InputManager(element);
+
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowRight", bubbles: true }));
+      expect(manager.getState().isKeyboardActive).toBe(true);
+
+      manager.reset();
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(0);
+      expect(state.isKeyboardActive).toBe(false);
+    });
+
+    it("should not respond to non-movement keys", () => {
+      manager = new InputManager(element);
+
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyW", bubbles: true }));
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(0);
+      expect(state.isKeyboardActive).toBe(false);
+    });
+
+    it("should remove keyboard listeners on detach", () => {
+      manager = new InputManager(element);
+
+      manager.detach();
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowRight", bubbles: true }));
+
+      const state = manager.getState();
+      expect(state.keyboardDirection).toBe(0);
+      expect(state.isKeyboardActive).toBe(false);
+    });
+  });
 });

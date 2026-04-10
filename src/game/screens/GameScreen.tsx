@@ -194,10 +194,11 @@ export function GameScreen() {
     setUnlockedAchievements((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
-  // Handle escape key for pause
+  // Handle pause keys (Escape and Space)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && screen === "playing") {
+      if ((e.key === "Escape" || e.code === "Space") && screen === "playing") {
+        e.preventDefault();
         if (isPaused) {
           resumeGame();
         } else {
@@ -318,7 +319,9 @@ export function GameScreen() {
       {screen === "playing" && stackHeight === 0 && lives > 0 && !isPaused && (
         <div className="absolute bottom-28 left-0 right-16 text-center pointer-events-none z-10">
           <p className="game-font text-white/50 animate-pulse" style={{ fontSize: fontSize.sm }}>
-            {isMobile ? "DRAG to catch falling animals!" : "DRAG to move • Catch falling animals!"}
+            {isMobile
+              ? "DRAG to catch falling animals!"
+              : "Arrow keys or drag to move • Space to pause"}
           </p>
         </div>
       )}

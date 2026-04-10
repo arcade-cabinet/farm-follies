@@ -34,12 +34,7 @@ import {
   updatePowerUpTimers,
   updateStress,
 } from "./entities/Player";
-import {
-  createPowerUp,
-  getPowerUpBobOffset,
-  type PowerUpEntity,
-  updatePowerUpBob,
-} from "./entities/PowerUp";
+import { createPowerUp, type PowerUpEntity, updatePowerUpBob } from "./entities/PowerUp";
 // Input
 import { InputManager } from "./input/InputManager";
 // Managers
@@ -79,7 +74,6 @@ import {
   shouldRemoveBush,
   updateAllBushes,
 } from "./systems/BushSystem";
-import { calculateMagneticPull } from "./systems/CollisionSystem";
 import {
   type AnimalWobbleState,
   applyStackImpulse,
@@ -401,6 +395,7 @@ export class Game {
           y: a.transform.position.y,
           width: a.bounds?.width ?? 0,
           height: a.bounds?.height ?? 0,
+          velocityX: a.velocity?.linear.x ?? 0,
           velocityY: a.velocity?.linear.y ?? 0,
         })),
       score: this.gameState.score,
@@ -413,6 +408,8 @@ export class Game {
       isPlaying: this._isPlaying,
       canvasWidth: this.canvas.width,
       canvasHeight: this.canvas.height,
+      wobbleIntensity: this.wobbleState.overallIntensity,
+      wobbleWarning: this.wobbleState.isWarning,
     };
   }
 
@@ -679,14 +676,29 @@ export class Game {
     const minX = this.scale.entityWidth / 2 + 10;
     const maxX = this.canvas.width - this.scale.bankWidth - this.scale.entityWidth / 2 - 10;
 
-    const updatedPlayer = updatePlayerPosition(
-      player,
-      inputState.pointerX,
-      minX,
-      maxX,
-      dt,
-      inputState.isDragging
-    );
+    // Keyboard movement: compute target from current position + direction * speed
+    let targetX = inputState.pointerX;
+    let isActive = inputState.isDragging;
+
+    if (inputState.isKeyboardActive) {
+      const playerCenterX = getPlayerCenterX(player);
+      const keyboardSpeed = this.canvas.width * 0.6; // 60% of screen width per second
+      targetX = playerCenterX + inputState.keyboardDirection * keyboardSpeed * (dt / 1000);
+      targetX = Math.max(minX, Math.min(maxX, targetX));
+      isActive = true;
+
+      // Apply wobble from keyboard movement
+      if (inputState.keyboardDirection !== 0) {
+        const wobbleForce = inputState.keyboardDirection * physics.wobbleStrength * 0.3;
+        this.wobbleState = applyStackImpulse(
+          this.wobbleState,
+          inputState.keyboardDirection,
+          Math.abs(wobbleForce) * 0.1
+        );
+      }
+    }
+
+    const updatedPlayer = updatePlayerPosition(player, targetX, minX, maxX, dt, isActive);
     this.entities.replace(updatedPlayer);
 
     // Update renderer effects

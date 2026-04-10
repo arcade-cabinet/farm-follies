@@ -29,6 +29,10 @@ export interface InputState {
   smoothedVelocityX: number;
   /** Time of last pointer event */
   lastEventTime: number;
+  /** Keyboard horizontal direction: -1 (left), 0 (none), 1 (right) */
+  keyboardDirection: number;
+  /** Whether keyboard is actively controlling movement */
+  isKeyboardActive: boolean;
 }
 
 export interface InputConfig {
@@ -71,10 +75,13 @@ export class InputManager {
     velocityY: 0,
     smoothedVelocityX: 0,
     lastEventTime: 0,
+    keyboardDirection: 0,
+    isKeyboardActive: false,
   };
 
   private lastPointerX = 0;
   private lastPointerY = 0;
+  private keysHeld = new Set<string>();
   private boundHandlers: {
     mousedown: (e: MouseEvent) => void;
     mousemove: (e: MouseEvent) => void;
@@ -84,6 +91,8 @@ export class InputManager {
     touchmove: (e: TouchEvent) => void;
     touchend: (e: TouchEvent) => void;
     touchcancel: (e: TouchEvent) => void;
+    keydown: (e: KeyboardEvent) => void;
+    keyup: (e: KeyboardEvent) => void;
   };
 
   private enabled = true;
@@ -107,6 +116,8 @@ export class InputManager {
       touchmove: this.handleTouchMove.bind(this),
       touchend: this.handleTouchEnd.bind(this),
       touchcancel: this.handleTouchEnd.bind(this),
+      keydown: this.handleKeyDown.bind(this),
+      keyup: this.handleKeyUp.bind(this),
     };
 
     this.attach();
@@ -124,6 +135,8 @@ export class InputManager {
     this.element.addEventListener("touchmove", this.boundHandlers.touchmove, { passive: false });
     this.element.addEventListener("touchend", this.boundHandlers.touchend);
     this.element.addEventListener("touchcancel", this.boundHandlers.touchcancel);
+    window.addEventListener("keydown", this.boundHandlers.keydown);
+    window.addEventListener("keyup", this.boundHandlers.keyup);
   }
 
   /**
@@ -138,6 +151,8 @@ export class InputManager {
     this.element.removeEventListener("touchmove", this.boundHandlers.touchmove);
     this.element.removeEventListener("touchend", this.boundHandlers.touchend);
     this.element.removeEventListener("touchcancel", this.boundHandlers.touchcancel);
+    window.removeEventListener("keydown", this.boundHandlers.keydown);
+    window.removeEventListener("keyup", this.boundHandlers.keyup);
   }
 
   /**
@@ -170,7 +185,10 @@ export class InputManager {
       velocityY: 0,
       smoothedVelocityX: 0,
       lastEventTime: 0,
+      keyboardDirection: 0,
+      isKeyboardActive: false,
     };
+    this.keysHeld.clear();
   }
 
   /**
@@ -349,6 +367,45 @@ export class InputManager {
   private handleTouchEnd(e: TouchEvent): void {
     // Use last known position since touches array is empty
     this.handlePointerUp(this.state.pointerX, this.state.pointerY);
+  }
+
+  // Keyboard event handlers
+  private static readonly MOVE_LEFT_KEYS = new Set(["ArrowLeft", "KeyA"]);
+  private static readonly MOVE_RIGHT_KEYS = new Set(["ArrowRight", "KeyD"]);
+
+  private handleKeyDown(e: KeyboardEvent): void {
+    if (!this.enabled) return;
+
+    const code = e.code;
+    if (InputManager.MOVE_LEFT_KEYS.has(code) || InputManager.MOVE_RIGHT_KEYS.has(code)) {
+      e.preventDefault();
+      this.keysHeld.add(code);
+      this.updateKeyboardDirection();
+    }
+  }
+
+  private handleKeyUp(e: KeyboardEvent): void {
+    const code = e.code;
+    if (InputManager.MOVE_LEFT_KEYS.has(code) || InputManager.MOVE_RIGHT_KEYS.has(code)) {
+      this.keysHeld.delete(code);
+      this.updateKeyboardDirection();
+    }
+  }
+
+  private updateKeyboardDirection(): void {
+    const left = [...InputManager.MOVE_LEFT_KEYS].some((k) => this.keysHeld.has(k));
+    const right = [...InputManager.MOVE_RIGHT_KEYS].some((k) => this.keysHeld.has(k));
+
+    if (left && !right) {
+      this.state.keyboardDirection = -1;
+      this.state.isKeyboardActive = true;
+    } else if (right && !left) {
+      this.state.keyboardDirection = 1;
+      this.state.isKeyboardActive = true;
+    } else {
+      this.state.keyboardDirection = 0;
+      this.state.isKeyboardActive = left && right; // both held = active but stationary
+    }
   }
 }
 

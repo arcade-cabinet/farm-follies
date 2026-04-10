@@ -91,8 +91,8 @@ test.describe("Engine Integration", () => {
     await startGame(page);
 
     // When stack is empty, a gameplay hint appears
-    // Use a more specific selector to avoid matching tutorial text
-    const hint = page.locator("p").filter({ hasText: /catch falling animals/i });
+    // Desktop shows "Arrow keys or drag to move", mobile shows "DRAG to catch falling animals"
+    const hint = page.locator("p").filter({ hasText: /arrow keys|drag/i });
     await expect(hint).toBeVisible({ timeout: 3000 });
   });
 });

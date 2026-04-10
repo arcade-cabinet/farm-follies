@@ -31,6 +31,9 @@ export interface GovernorSnapshot {
   isPlaying: boolean;
   canvasWidth: number;
   canvasHeight: number;
+  // Wobble state for E2E testing
+  wobbleIntensity?: number;
+  wobbleWarning?: boolean;
 }
 
 export interface GovernorStats {
