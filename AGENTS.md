@@ -1,6 +1,6 @@
 ---
 title: Agent Operating Protocols
-updated: 2026-04-09
+updated: 2026-04-22
 status: current
 domain: technical
 ---
@@ -8,6 +8,29 @@ domain: technical
 # Farm Follies — AGENTS.md
 
 Extended operating protocols, architecture patterns, and memory bank system for AI agents working on this codebase.
+
+## Arcade Consolidation Intake: Canonical Stacker
+
+Farm Follies is the active destination for the stacker/merge line that includes Sky Hats, Infinite Headaches, Psyduck's Infinite Headache, Homestead Headaches, and legacy Farm Follies POCs.
+
+Treat Farm Follies as the canonical product unless playtesting later proves a different stacker identity is stronger. Do not split the same mechanics back into separate active products without an explicit decision.
+
+Source roles:
+
+- Sky Hats contributes Rapier/Jenga-style balance, unstable stack reading, and satisfying near-collapse tension.
+- Psyduck's Infinite Headache contributes Suika-style matching, growth thresholds, and merge anticipation.
+- Infinite Headaches contributes ECS stacking, wobble, and banking/progression ideas.
+- Homestead Headaches contributes 3D asset direction and AI director pressure.
+- Legacy Farm Follies contributes approachable farm framing and player expectation.
+
+Product direction:
+
+- One primary verb: drop, stack, and merge.
+- One wrapper identity: readable farm chaos, not a collage of hat/duck/prototype premises.
+- A couch-friendly score/challenge loop before deep progression.
+- Mobile-first touch interaction and deterministic visual feedback for stack state, merge readiness, wobble danger, and recovery.
+
+Do not import placeholder visuals or redundant prototype shell code. Preserve POCs as source history, then translate only the systems that improve Farm Follies' current loop.
 
 ## Memory Bank Protocol
 
