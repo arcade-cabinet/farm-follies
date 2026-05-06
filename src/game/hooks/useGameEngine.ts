@@ -154,10 +154,19 @@ export function useGameEngine(options: UseGameEngineOptions = {}): UseGameEngine
     const engine = new Game(canvas, callbacks);
     engineRef.current = engine;
 
+    // Expose game instance in dev/test mode for E2E governor
+    if (import.meta.env.DEV && import.meta.env.MODE !== "production") {
+      (window as unknown as Record<string, unknown>).__game = engine;
+    }
+
     return () => {
       engine.destroy();
       for (const t of timeoutsRef.current) clearTimeout(t);
       timeoutsRef.current.clear();
+      // Clean up dev-mode game reference to avoid stale references
+      if (import.meta.env.DEV) {
+        delete (window as unknown as Record<string, unknown>).__game;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

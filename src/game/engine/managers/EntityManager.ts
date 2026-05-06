@@ -190,7 +190,10 @@ export class EntityManager {
         !Array.isArray(existing) &&
         !Array.isArray(value)
       ) {
-        merged[key] = { ...(existing as Record<string, unknown>), ...(value as Record<string, unknown>) };
+        merged[key] = {
+          ...(existing as Record<string, unknown>),
+          ...(value as Record<string, unknown>),
+        };
       } else {
         merged[key] = value;
       }

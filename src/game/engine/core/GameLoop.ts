@@ -66,6 +66,9 @@ export class GameLoop {
   private lastMetricsTime = 0;
   private fpsAccumulator = 0;
 
+  // Visibility API handler
+  private boundVisibilityHandler: (() => void) | null = null;
+
   constructor(callbacks: GameLoopCallbacks, config: Partial<GameLoopConfig> = {}) {
     this.callbacks = callbacks;
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -85,6 +88,9 @@ export class GameLoop {
     this.lastMetricsTime = this.lastFrameTime;
     this.frameCount = 0;
 
+    // Listen for tab visibility changes to prevent stale-frame jumps
+    this.addVisibilityListener();
+
     this.tick();
   }
 
@@ -97,6 +103,7 @@ export class GameLoop {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
+    this.removeVisibilityListener();
   }
 
   /**
@@ -208,6 +215,34 @@ export class GameLoop {
 
     this.animationId = requestAnimationFrame(this.tick);
   };
+
+  /**
+   * Handle tab visibility changes.
+   * When a tab is backgrounded, browsers throttle or stop rAF callbacks.
+   * When the tab returns, the elapsed time can be huge, causing the
+   * accumulator to overflow and trigger the "spiral of death" safety cap,
+   * which silently drops all pending physics frames. Instead, reset the
+   * timing so the next frame picks up cleanly.
+   */
+  private handleVisibilityChange = (): void => {
+    if (document.visibilityState === "visible" && this.isRunning && !this.isPaused) {
+      this.lastFrameTime = performance.now();
+      this.accumulator = 0;
+    }
+  };
+
+  private addVisibilityListener(): void {
+    this.removeVisibilityListener();
+    this.boundVisibilityHandler = this.handleVisibilityChange;
+    document.addEventListener("visibilitychange", this.boundVisibilityHandler);
+  }
+
+  private removeVisibilityListener(): void {
+    if (this.boundVisibilityHandler) {
+      document.removeEventListener("visibilitychange", this.boundVisibilityHandler);
+      this.boundVisibilityHandler = null;
+    }
+  }
 }
 
 /**

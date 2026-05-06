@@ -72,13 +72,27 @@ export function getPlayerCenterX(player: PlayerEntity): number {
 }
 
 /**
- * Get the stack top Y position (where next animal would land)
+ * Ratio of entity height from feet to the visual head/hat where animals land.
+ * The farmer renderer (farmer.ts) draws with origin at feet and places the
+ * hat brim at `-h * 0.52`, so the head is 52% of entity height above the feet.
+ */
+const FARMER_HEAD_RATIO = 0.52;
+
+/**
+ * Get the stack top Y position (where next animal would land).
+ *
+ * The farmer is rendered with its origin at the feet (position.y + height).
+ * The hat/head — where animals visually land — is at
+ * `feetY - height * FARMER_HEAD_RATIO`. This function returns that visual
+ * position so collision detection matches what the player sees on screen.
  */
 export function getStackTopY(player: PlayerEntity): number {
-  const baseY = player.transform.position.y;
+  const height = player.bounds?.height ?? 100;
+  const feetY = player.transform.position.y + height;
+  const headY = feetY - height * FARMER_HEAD_RATIO;
 
   if (player.player.stack.length === 0) {
-    return baseY;
+    return headY;
   }
 
   // Calculate stack height with overlap
@@ -87,7 +101,7 @@ export function getStackTopY(player: PlayerEntity): number {
     stackHeight += (animal.bounds?.height ?? 50) * 0.7;
   }
 
-  return baseY - stackHeight;
+  return headY - stackHeight;
 }
 
 /**

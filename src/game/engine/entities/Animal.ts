@@ -194,7 +194,7 @@ export function catchAnimal(
       stackIndex,
       stackOffset,
     },
-    velocity: undefined, // Stop moving
+    velocity: { linear: { x: 0, y: 0 }, angular: 0 }, // Stop moving
   };
 }
 
